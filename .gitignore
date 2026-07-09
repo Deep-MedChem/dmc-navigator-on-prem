@@ -13,3 +13,9 @@ inputs/
 __pycache__/
 *.pyc
 .DS_Store
+
+# Local test scratchpad (not for distribution)
+local_install_test.ipynb
+_local_license.json
+.ipynb_checkpoints/
+.test-home/
