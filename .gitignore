@@ -1,0 +1,15 @@
+# Local, machine-specific, or secret — never commit.
+.env
+license.json
+*.pem
+*.tar
+*.tar.gz
+
+# Runtime data (created by the installer / at run time).
+runs/
+inputs/
+
+# Cruft
+__pycache__/
+*.pyc
+.DS_Store

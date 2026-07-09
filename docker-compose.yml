@@ -1,0 +1,22 @@
+# dmc-navigator-prod — on-prem run definition.
+#
+# This stack is PULL-ONLY: it runs a pre-built, license-gated image. There is no
+# build here. The image is fetched from your registry (see .env / DMC_NAV_IMAGE).
+#
+# `navigator` is a one-shot CLI service — you invoke it per command via
+# `docker compose run --rm`, which the `navigator` wrapper does for you.
+services:
+  navigator:
+    image: "${DMC_NAV_IMAGE:?set DMC_NAV_IMAGE in .env}:${DMC_NAV_IMAGE_TAG:-latest}"
+    # Run as the invoking user so files written into ./runs are owned by you.
+    user: "${DMC_NAV_UID:-1000}:${DMC_NAV_GID:-1000}"
+    volumes:
+      # Workflow state (writable, persisted on the host).
+      - "${DMC_NAV_RUNS_DIR:-./runs}:/opt/dmc-navigator-prod/runs"
+      # Your machine-bound license, mounted read-only at the default lookup path.
+      - "${DMC_NAV_LICENSE_FILE:-./license.json}:/licenses/dmc_navigator_license.json:ro"
+      # Optional: your own reaction/synthon inputs and target configs.
+      - "${DMC_NAV_INPUTS_DIR:-./inputs}:/opt/dmc-navigator-prod/inputs"
+    environment:
+      # Set to 1 to see full Python tracebacks while debugging.
+      DMC_NAV_DEBUG: "${DMC_NAV_DEBUG:-}"

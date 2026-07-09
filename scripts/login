@@ -1,0 +1,34 @@
+#!/bin/bash
+# Authenticate Docker to the image registry. For AWS ECR this uses the AWS CLI;
+# adjust to whatever credentials Deep-MedChem provides at image handoff.
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+IMG="${DMC_NAV_IMAGE:-}"
+if [ -z "$IMG" ] || [[ "$IMG" == REPLACE_ME* ]]; then
+  echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env first (the registry ref we give you)."
+  exit 1
+fi
+
+# Registry = everything before the first '/'.
+REGISTRY="${IMG%%/*}"
+
+if [[ "$REGISTRY" == *.dkr.ecr.*.amazonaws.com ]]; then
+  # AWS ECR: region is the 4th dotted field of the host.
+  REGION="$(echo "$REGISTRY" | cut -d. -f4)"
+  echo "Logging in to AWS ECR ${REGISTRY} (region ${REGION})..."
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "The AWS CLI is required for ECR login. Install it, run 'aws configure' with the"
+    echo "credentials we provide, then re-run 'navigator login'."
+    exit 1
+  fi
+  aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+else
+  cat <<EOF
+Registry '${REGISTRY}' is not an ECR host. Log in with the credentials we gave you, e.g.:
+  docker login ${REGISTRY} -u <user>
+Then run: navigator pull
+EOF
+fi

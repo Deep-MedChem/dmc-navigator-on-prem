@@ -1,0 +1,35 @@
+#!/bin/bash
+# Sourced by the `navigator` command. Resolves the compose invocation so it
+# works from any directory, and makes sure the host mount points exist.
+set -euo pipefail
+
+# REPO_FOLDER is exported by ~/.config/dmc-navigator/env.sh (written at install).
+if [ -z "${REPO_FOLDER:-}" ] && [ -f "${HOME}/.config/dmc-navigator/env.sh" ]; then
+  # shellcheck disable=SC1091
+  source "${HOME}/.config/dmc-navigator/env.sh"
+fi
+: "${REPO_FOLDER:?REPO_FOLDER not set — run install_navigator.sh first}"
+
+COMPOSE_FILE="${REPO_FOLDER}/docker-compose.yml"
+[ -f "$COMPOSE_FILE" ] || { echo "compose file not found: $COMPOSE_FILE"; exit 1; }
+
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-dmc-navigator}"
+# --project-directory makes compose load REPO_FOLDER/.env regardless of cwd.
+export COMPOSE_CMD="docker compose -p ${COMPOSE_PROJECT_NAME} --project-directory ${REPO_FOLDER} -f ${COMPOSE_FILE}"
+
+# Ensure the writable mount points exist so `compose run` never fails on a
+# missing bind source.
+_ensure_dirs() {
+  # Pull path values out of .env (fall back to the compose defaults).
+  local runs inputs
+  runs="$(grep -E '^DMC_NAV_RUNS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+  inputs="$(grep -E '^DMC_NAV_INPUTS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+  runs="${runs:-./runs}"; inputs="${inputs:-./inputs}"
+  case "$runs" in /*) : ;; *) runs="${REPO_FOLDER}/${runs#./}" ;; esac
+  case "$inputs" in /*) : ;; *) inputs="${REPO_FOLDER}/${inputs#./}" ;; esac
+  mkdir -p "$runs" "$inputs"
+}
+_ensure_dirs
+
+# The image registry reference, for `navigator login` guidance.
+export DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"

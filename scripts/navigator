@@ -1,0 +1,50 @@
+#!/bin/bash
+# dmc-navigator-prod on-prem command. Thin wrapper around `docker compose run`
+# for the license-gated image. Infra subcommands are handled by sibling scripts;
+# anything else is forwarded straight to the in-container CLI.
+set -euo pipefail
+
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+show_help() {
+  cat <<'EOF'
+dmc-navigator-prod — on-prem
+
+Setup / licensing:
+  navigator login                     Guidance to authenticate to the image registry
+  navigator pull                      Pull the container image
+  navigator machine-id                Print this machine's license fingerprint
+  navigator update-license <file>     Install a signed license file
+  navigator verify-license            Verify the installed license
+
+Workflow (forwarded to the licensed CLI; require a valid license):
+  navigator init  --run-dir runs/<name> --config-json inputs/<target>.json --overwrite
+  navigator propose        --run-dir runs/<name>
+  navigator ingest         --run-dir runs/<name> --scores <scores.csv>
+  navigator update-params  --run-dir runs/<name> [--budget N ...]
+  navigator status         --run-dir runs/<name>
+  navigator <cmd> --help              Show options for any workflow command
+
+Housekeeping:
+  navigator shell                     Open a shell in the image (debugging)
+  navigator uninstall                 Remove the installed command + config (keeps this repo)
+  navigator help                      This message
+EOF
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  -h|--help|help) show_help ;;
+  login)          exec "${SELF_DIR}/login" "$@" ;;
+  pull)           exec "${SELF_DIR}/pull" "$@" ;;
+  machine-id)     exec "${SELF_DIR}/machine-id" "$@" ;;
+  update-license) exec "${SELF_DIR}/update-license" "$@" ;;
+  verify-license) exec "${SELF_DIR}/verify-license" "$@" ;;
+  uninstall)      exec "${SELF_DIR}/uninstall-navigator" "$@" ;;
+  shell)          exec $COMPOSE_CMD run --rm --entrypoint bash navigator "$@" ;;
+  # Workflow commands and everything else → the in-container licensed CLI.
+  init|propose|ingest|update-params|status|*)
+                  exec $COMPOSE_CMD run --rm navigator "$cmd" "$@" ;;
+esac

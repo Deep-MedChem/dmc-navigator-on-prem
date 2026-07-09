@@ -1,0 +1,8 @@
+#!/bin/bash
+# Print this machine's license fingerprint. Send the integer to Deep-MedChem to
+# have a license issued. Works before any license is installed.
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+exec $COMPOSE_CMD run --rm navigator machine-id

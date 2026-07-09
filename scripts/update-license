@@ -1,0 +1,33 @@
+#!/bin/bash
+# Install a signed license file into the location the container mounts.
+# Usage: navigator update-license /path/to/your_license.json
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+SRC="${1:-}"
+if [ -z "$SRC" ] || [ ! -f "$SRC" ]; then
+  echo "Usage: navigator update-license <path-to-license.json>"
+  exit 1
+fi
+
+# Resolve the destination from .env (DMC_NAV_LICENSE_FILE), default ./license.json.
+DEST="$(grep -E '^DMC_NAV_LICENSE_FILE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+DEST="${DEST:-./license.json}"
+case "$DEST" in /*) : ;; *) DEST="${REPO_FOLDER}/${DEST#./}" ;; esac
+
+# Sanity-check it's JSON and names the right product before installing.
+if command -v python3 >/dev/null 2>&1; then
+  python3 - "$SRC" <<'PY' || { echo "❌ That does not look like a valid dmc-navigator license."; exit 1; }
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d.get("product_name") == "dmc-navigator", "product_name is not 'dmc-navigator'"
+assert "signature" in d, "no signature field"
+PY
+fi
+
+cp "$SRC" "$DEST"
+chmod 0644 "$DEST"
+echo "Installed license -> $DEST"
+echo "Now run: navigator verify-license"

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Pull the dmc-navigator-prod image defined in .env. Run `navigator login` first
+# if the registry is private.
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+if [ -z "${DMC_NAV_IMAGE:-}" ] || [[ "${DMC_NAV_IMAGE}" == REPLACE_ME* ]]; then
+  echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env before pulling."
+  exit 1
+fi
+exec $COMPOSE_CMD pull

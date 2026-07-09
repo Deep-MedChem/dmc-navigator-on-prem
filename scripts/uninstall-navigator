@@ -1,0 +1,14 @@
+#!/bin/bash
+# Remove the installed `navigator` command and its config. Leaves this repo, your
+# .env, runs/ and license.json in place.
+set -euo pipefail
+BIN_DIR="${HOME}/.local/bin/dmc-navigator"
+CONFIG_DIR="${HOME}/.config/dmc-navigator"
+
+read -r -p "Remove ${BIN_DIR} and ${CONFIG_DIR}? (y/N) " ans || true
+if [[ "$ans" =~ ^[Yy]$ ]]; then
+  rm -rf "$BIN_DIR" "$CONFIG_DIR"
+  echo "Removed. You may also delete the PATH line marked '# dmc-navigator on-prem PATH' from ~/.bashrc."
+else
+  echo "Cancelled."
+fi
