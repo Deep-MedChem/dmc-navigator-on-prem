@@ -6,8 +6,8 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SELF_DIR}/_compose-env"
 
-if [ -z "${DMC_NAV_IMAGE:-}" ] || [[ "${DMC_NAV_IMAGE}" == REPLACE_ME* ]]; then
-  echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env before pulling."
+if [ -z "${DMC_NAV_IMAGE:-}" ] || [[ "${DMC_NAV_IMAGE,,}" == replace-me* ]]; then
+  echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env before pulling (the registry ref we give you)."
   exit 1
 fi
 exec $COMPOSE_CMD pull

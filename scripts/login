@@ -7,7 +7,7 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SELF_DIR}/_compose-env"
 
 IMG="${DMC_NAV_IMAGE:-}"
-if [ -z "$IMG" ] || [[ "$IMG" == REPLACE_ME* ]]; then
+if [ -z "$IMG" ] || [[ "${IMG,,}" == replace-me* ]]; then
   echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env first (the registry ref we give you)."
   exit 1
 fi

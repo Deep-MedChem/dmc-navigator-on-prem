@@ -48,7 +48,9 @@ navigator pull      # fetch the image
 
 ## 3. Activate your license
 
-The license is bound to this machine's hardware fingerprint.
+The license is bound to this machine's hardware fingerprint. `machine-id` reads
+your host's DMI identity directly, so it needs **no image, registry, or license**
+— you can run it right after `install` (even before `pull`):
 
 ```bash
 navigator machine-id
@@ -56,7 +58,7 @@ navigator machine-id
 ```
 
 Send that integer to Deep-MedChem. We return a `license.json`; install and
-verify it:
+verify it (this step does use the image, so `pull` first):
 
 ```bash
 navigator update-license /path/to/license.json
