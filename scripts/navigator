@@ -43,8 +43,9 @@ case "$cmd" in
   update-license) exec "${SELF_DIR}/update-license" "$@" ;;
   verify-license) exec "${SELF_DIR}/verify-license" "$@" ;;
   uninstall)      exec "${SELF_DIR}/uninstall-navigator" "$@" ;;
-  shell)          exec $COMPOSE_CMD run --rm --entrypoint bash navigator "$@" ;;
+  shell)          require_image || exit 1; exec $COMPOSE_CMD run --rm --entrypoint bash navigator "$@" ;;
   # Workflow commands and everything else → the in-container licensed CLI.
   init|propose|ingest|update-params|status|*)
+                  require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator "$cmd" "$@" ;;
 esac
