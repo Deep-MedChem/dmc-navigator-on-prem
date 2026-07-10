@@ -69,10 +69,59 @@ navigator self-test   # packaged-runtime health; no license required
 ```
 
 `navigator login` checks the active identity. Unless it is already an
-`arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/...` session, the
-script assumes `arn:aws:iam::815935788477:role/cheese-onprem-pull`, uses those
+`arn:aws:sts::815935788477:assumed-role/navigator-onprem-pull/...` session, the
+script assumes `arn:aws:iam::815935788477:role/navigator-onprem-pull`, uses those
 temporary credentials only for the ECR password request, and discards them. It
 does not need `jq` and does not write assumed-role credentials to disk.
+
+### Alternative: keep the key in a secret manager
+
+If your policy forbids plaintext keys in `~/.aws/credentials`, skip
+`aws configure` entirely. `navigator login` honors the standard AWS environment
+variables, so any secret manager that can inject `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY` into a single command's environment works — the key is
+read once for the role assumption and never written to disk.
+
+**1Password CLI:**
+
+```bash
+cat > navigator-login.env <<'EOF'
+AWS_ACCESS_KEY_ID="op://<vault>/<item>/access key id"
+AWS_SECRET_ACCESS_KEY="op://<vault>/<item>/secret access key"
+EOF
+op run --env-file navigator-login.env -- navigator login
+```
+
+(The `op://` references are pointers, not secrets — the file is safe to keep.
+If your item title contains characters `op` rejects in references, use the
+vault/item UUIDs instead of names.)
+
+**HashiCorp Vault / `pass` / anything with a CLI read:**
+
+```bash
+AWS_ACCESS_KEY_ID="$(vault kv get -field=access_key_id secret/dmc-navigator)" \
+AWS_SECRET_ACCESS_KEY="$(vault kv get -field=secret_access_key secret/dmc-navigator)" \
+navigator login
+```
+
+**Persistent profile without a plaintext file** — if you prefer a normal
+`AWS_PROFILE` workflow, `credential_process` makes the AWS CLI ask your secret
+manager on demand instead of reading `~/.aws/credentials`. In `~/.aws/config`:
+
+```ini
+[profile dmc-navigator-source]
+credential_process = /usr/local/bin/dmc-navigator-creds
+```
+
+where the script prints `{"Version": 1, "AccessKeyId": "...", "SecretAccessKey": "..."}`
+populated from your secret manager. Then `AWS_PROFILE=dmc-navigator-source navigator login`
+works as in the standard flow.
+
+In every variant, the only thing that reaches Docker is the ECR token, which
+expires after 12 hours. If you also want *that* out of
+`~/.docker/config.json`, configure a
+[Docker credential helper](https://docs.docker.com/engine/reference/commandline/login/#credential-stores)
+— it is optional and independent of `navigator login`.
 
 ## 3. Activate your license
 
@@ -182,7 +231,7 @@ warns if a campaign narrows to one or two chemotype families.
 - **AWS `AccessDenied` during login.** Confirm that the active profile contains
   the customer source credentials supplied by Deep-MedChem. Do not add ECR
   permissions to that user; it only needs permission to assume
-  `cheese-onprem-pull`.
+  `navigator-onprem-pull`.
 - **arm64 host.** The current release is `linux/amd64` only. Use a supported
   x86_64 Linux host for production rather than relying on emulation.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
