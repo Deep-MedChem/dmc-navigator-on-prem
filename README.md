@@ -7,6 +7,10 @@ pre-built, obfuscated, license-gated container image from Deep-MedChem and wraps
 it in a small `navigator` command. Your molecules, run state, and license never
 leave your host.
 
+Production updates arrive through the `stable` image channel. Deep-MedChem moves
+that tag only after a reviewed on-prem release passes tests and image smoke checks;
+you choose when to install it by running `navigator update`.
+
 - **Offline:** after the image is pulled, no network access is required or made.
 - **Licensed:** the image only runs with a valid license issued for *this*
   machine (see [Activate your license](#3-activate-your-license)).
@@ -145,3 +149,5 @@ warns if a campaign narrows to one or two chemotype families.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
   in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
   Existing runs, inputs, and the installed license remain in place.
+- **Existing `latest` installs.** Change `DMC_NAV_IMAGE_TAG=latest` to
+  `DMC_NAV_IMAGE_TAG=stable` in `.env` once, then run `navigator update`.
