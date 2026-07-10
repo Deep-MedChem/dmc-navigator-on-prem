@@ -97,6 +97,7 @@ Append `--help` to any workflow command for its options
 |---|---|
 | `navigator login` | Authenticate Docker to the image registry |
 | `navigator pull` | Pull / update the container image |
+| `navigator update` | Check for a newer production image, pull it, and report whether it changed |
 | `navigator machine-id` | Print this machine's license fingerprint |
 | `navigator update-license <file>` | Install a signed license file |
 | `navigator verify-license` | Verify the installed license |
@@ -115,5 +116,6 @@ Append `--help` to any workflow command for its options
   that `DMC_NAV_LICENSE_FILE` in `.env` points at it.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
-- **Updating the image.** `navigator pull` fetches the latest tag in `.env`
-  (`DMC_NAV_IMAGE_TAG`).
+- **Updating the image.** Run `navigator update`. It fetches the configured tag
+  in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
+  Existing runs, inputs, and the installed license remain in place.
