@@ -34,7 +34,7 @@ _ensure_dirs
 # The image reference, for login/pull guidance and the require_image guard.
 export DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
 export DMC_NAV_IMAGE_TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-export DMC_NAV_IMAGE_REF="${DMC_NAV_IMAGE:-}:${DMC_NAV_IMAGE_TAG:-latest}"
+export DMC_NAV_IMAGE_REF="${DMC_NAV_IMAGE:-}:${DMC_NAV_IMAGE_TAG:-stable}"
 
 # A ref is still the unconfigured placeholder if it's empty or starts with
 # "replace" (covers both the old REPLACE_ME... and new replace-me... templates).

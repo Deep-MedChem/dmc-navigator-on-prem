@@ -37,7 +37,7 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SELF_DIR}/_compose-env"
 TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-REF="${DMC_NAV_IMAGE:-}:${TAG:-latest}"
+REF="${DMC_NAV_IMAGE:-}:${TAG:-stable}"
 if [ -n "${DMC_NAV_IMAGE:-}" ] && docker image inspect "$REF" >/dev/null 2>&1; then
   exec $COMPOSE_CMD run --rm navigator machine-id
 fi

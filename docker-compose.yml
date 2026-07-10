@@ -7,7 +7,7 @@
 # `docker compose run --rm`, which the `navigator` wrapper does for you.
 services:
   navigator:
-    image: "${DMC_NAV_IMAGE:?set DMC_NAV_IMAGE in .env}:${DMC_NAV_IMAGE_TAG:-latest}"
+    image: "${DMC_NAV_IMAGE:?set DMC_NAV_IMAGE in .env}:${DMC_NAV_IMAGE_TAG:-stable}"
     # Run as the invoking user so files written into ./runs are owned by you.
     user: "${DMC_NAV_UID:-1000}:${DMC_NAV_GID:-1000}"
     volumes:
