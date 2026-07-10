@@ -1,14 +1,14 @@
 #!/bin/bash
 # Authenticate Docker to the image registry. Customer IAM users deliberately
 # cannot access ECR directly: for the shared Deep-MedChem ECR registry this
-# script obtains short-lived credentials for cheese-onprem-pull in memory, uses
-# them once to request an ECR password, and never writes them to disk.
+# script obtains short-lived credentials for navigator-onprem-pull in memory,
+# uses them once to request an ECR password, and never writes them to disk.
 set -euo pipefail
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SELF_DIR}/_compose-env"
 
-PULL_ROLE_ARN="arn:aws:iam::815935788477:role/cheese-onprem-pull"
+PULL_ROLE_ARN="arn:aws:iam::815935788477:role/navigator-onprem-pull"
 PULL_ROLE_SESSION_NAME="dmc-navigator-login"
 
 IMG="${DMC_NAV_IMAGE:-}"
@@ -48,8 +48,8 @@ if [[ "$REGISTRY" == *.dkr.ecr.*.amazonaws.com ]]; then
   # sessions. All other identities follow the customer bootstrap contract and
   # assume the exact shared pull role.
   case "$CALLER_ARN" in
-    arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/*|"$PULL_ROLE_ARN")
-      echo "Using already-assumed cheese-onprem-pull credentials."
+    arn:aws:sts::815935788477:assumed-role/navigator-onprem-pull/*|"$PULL_ROLE_ARN")
+      echo "Using already-assumed navigator-onprem-pull credentials."
       ;;
     *)
       echo "Assuming ${PULL_ROLE_ARN} from ${CALLER_ARN}..."
