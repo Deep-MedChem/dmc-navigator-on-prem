@@ -19,6 +19,17 @@ REPO_FOLDER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="${HOME}/.config/dmc-navigator"
 BIN_DIR="${HOME}/.local/bin/dmc-navigator"
 
+# Production support is linux/amd64 only. Keep local smoke tests possible under
+# Docker Desktop emulation, but make a non-production host impossible to miss.
+HOST_PLATFORM="$(uname -s)/$(uname -m)"
+case "$HOST_PLATFORM" in
+  Linux/x86_64|Linux/amd64) ;;
+  *)
+    echo "⚠️  This host is ${HOST_PLATFORM}; the production image supports linux/amd64 only." >&2
+    echo "   Use an x86_64 Linux host for a supported customer deployment." >&2
+    ;;
+esac
+
 echo "Preparing folders..."
 mkdir -p "${CONFIG_DIR}" "${BIN_DIR}"
 
@@ -29,7 +40,7 @@ if [ -f "${REPO_FOLDER}/.env" ]; then
   echo "Keeping existing ${REPO_FOLDER}/.env"
 else
   cp "${REPO_FOLDER}/.env.example" "${REPO_FOLDER}/.env"
-  echo "Seeded ${REPO_FOLDER}/.env from .env.example — edit DMC_NAV_IMAGE before pulling."
+  echo "Seeded ${REPO_FOLDER}/.env with the shared production ECR image."
 fi
 
 # Record UID/GID so the container writes ./runs as you (not root). Append only if
@@ -63,9 +74,9 @@ cat <<EOF
 ✅ Installed.
 
 Next steps (open a new shell first, or run: export PATH="\$PATH:${BIN_DIR}"):
-  1. edit ${REPO_FOLDER}/.env   # set DMC_NAV_IMAGE to the registry ref we give you
-  2. navigator login            # authenticate to the registry (prints guidance)
-  3. navigator pull             # fetch the image
+  1. configure the AWS source credentials supplied by Deep-MedChem
+  2. navigator login            # assume cheese-onprem-pull and authenticate to ECR
+  3. navigator pull             # fetch the linux/amd64 image
   4. navigator machine-id       # send the printed ID to Deep-MedChem
   5. navigator update-license <license.json>   # install the license we send back
   6. navigator verify-license   # expect: ✅ Valid license

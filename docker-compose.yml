@@ -8,6 +8,10 @@
 services:
   navigator:
     image: "${DMC_NAV_IMAGE:?set DMC_NAV_IMAGE in .env}:${DMC_NAV_IMAGE_TAG:-stable}"
+    # The current customer release is a single-platform linux/amd64 image.
+    # Pinning it here makes the runtime contract explicit and lets Docker
+    # report a clear emulation/platform error on unsupported hosts.
+    platform: linux/amd64
     # Run as the invoking user so files written into ./runs are owned by you.
     user: "${DMC_NAV_UID:-1000}:${DMC_NAV_GID:-1000}"
     volumes:
