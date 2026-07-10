@@ -15,6 +15,7 @@ dmc-navigator-prod — on-prem
 Setup / licensing:
   navigator login                     Guidance to authenticate to the image registry
   navigator pull                      Pull the container image
+  navigator update                    Pull the image and report whether it changed
   navigator machine-id                Print this machine's license fingerprint
   navigator update-license <file>     Install a signed license file
   navigator verify-license            Verify the installed license
@@ -39,6 +40,7 @@ case "$cmd" in
   -h|--help|help) show_help ;;
   login)          exec "${SELF_DIR}/login" "$@" ;;
   pull)           exec "${SELF_DIR}/pull" "$@" ;;
+  update)         exec "${SELF_DIR}/update" "$@" ;;
   machine-id)     exec "${SELF_DIR}/machine-id" "$@" ;;
   update-license) exec "${SELF_DIR}/update-license" "$@" ;;
   verify-license) exec "${SELF_DIR}/verify-license" "$@" ;;

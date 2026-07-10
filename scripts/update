@@ -1,0 +1,56 @@
+#!/bin/bash
+# Pull the configured production image and report whether it changed.
+set -euo pipefail
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+if image_is_placeholder; then
+  echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env before updating (the registry ref we give you)."
+  exit 1
+fi
+
+image_id() {
+  docker image inspect --format '{{.Id}}' "$DMC_NAV_IMAGE_REF" 2>/dev/null || true
+}
+
+image_version() {
+  docker image inspect \
+    --format '{{with .Config.Labels}}{{index . "org.opencontainers.image.version"}}{{end}}' \
+    "$DMC_NAV_IMAGE_REF" 2>/dev/null || true
+}
+
+describe_image() {
+  local id="$1" version="$2" short_id
+  short_id="${id#sha256:}"
+  short_id="${short_id:0:12}"
+  if [ -n "$version" ] && [ "$version" != "<no value>" ]; then
+    printf '%s (image %s)' "$version" "$short_id"
+  else
+    printf 'image %s' "$short_id"
+  fi
+}
+
+before_id="$(image_id)"
+before_version=""
+[ -z "$before_id" ] || before_version="$(image_version)"
+
+echo "Checking for dmc-navigator-prod updates..."
+$COMPOSE_CMD pull
+
+after_id="$(image_id)"
+if [ -z "$after_id" ]; then
+  echo "❌ Update pull completed, but image '${DMC_NAV_IMAGE_REF}' is not available locally." >&2
+  exit 1
+fi
+after_version="$(image_version)"
+after_description="$(describe_image "$after_id" "$after_version")"
+
+if [ -z "$before_id" ]; then
+  echo "✅ Installed ${after_description}."
+elif [ "$before_id" = "$after_id" ]; then
+  echo "✅ Already up to date: ${after_description}."
+else
+  before_description="$(describe_image "$before_id" "$before_version")"
+  echo "✅ Updated: ${before_description} -> ${after_description}."
+fi
