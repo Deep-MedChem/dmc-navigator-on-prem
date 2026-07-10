@@ -25,8 +25,13 @@ Workflow (forwarded to the licensed CLI; require a valid license):
   navigator propose        --run-dir runs/<name>
   navigator ingest         --run-dir runs/<name> --scores <scores.csv>
   navigator update-params  --run-dir runs/<name> [--budget N ...]
+  navigator transition     --run-dir runs/<name> --to analog_harvest
   navigator status         --run-dir runs/<name>
   navigator <cmd> --help              Show options for any workflow command
+
+Info (no license required):
+  navigator roster                    List the available strategy presets
+  navigator self-test                 Report runtime health (no proprietary data)
 
 Housekeeping:
   navigator shell                     Open a shell in the image (debugging)
@@ -47,7 +52,7 @@ case "$cmd" in
   uninstall)      exec "${SELF_DIR}/uninstall-navigator" "$@" ;;
   shell)          require_image || exit 1; exec $COMPOSE_CMD run --rm --entrypoint bash navigator "$@" ;;
   # Workflow commands and everything else → the in-container licensed CLI.
-  init|propose|ingest|update-params|status|*)
+  init|propose|ingest|update-params|transition|status|roster|self-test|*)
                   require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator "$cmd" "$@" ;;
 esac

@@ -89,6 +89,29 @@ Paths are relative to the container's working directory: `runs/…` maps to
 Append `--help` to any workflow command for its options
 (`navigator status --help`).
 
+## Choosing a strategy
+
+The optimizer ships four strategies, selected by the `strategy` field in your
+target config (`navigator roster` lists them):
+
+| Preset | Role |
+|---|---|
+| `alpha_diversity_screening` | **Default.** Broad global discovery — start here. |
+| `gamma_diversity_screening` | Faster/balanced alternative screen. |
+| `beta_diversity_screening` | Advanced exploration (experimental). |
+| `analog_harvest` | Harvest analogs of your best chemotypes (beta). |
+
+Recommended: run `alpha_diversity_screening` first; once you have measured hits,
+switch to analog harvesting over the same archive and budget:
+
+```bash
+navigator transition --run-dir runs/hk --to analog_harvest
+navigator propose    --run-dir runs/hk
+```
+
+`analog_harvest` reports how concentrated its hits are on every proposal and
+warns if a campaign narrows to one or two chemotype families.
+
 ---
 
 ## Command reference
@@ -102,6 +125,9 @@ Append `--help` to any workflow command for its options
 | `navigator update-license <file>` | Install a signed license file |
 | `navigator verify-license` | Verify the installed license |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
+| `navigator transition --to <preset>` | Switch strategy, keeping the archive and budget |
+| `navigator roster` | List the available strategy presets (no license needed) |
+| `navigator self-test` | Report runtime health without disclosing data (no license needed) |
 | `navigator shell` | Open a shell in the image (debugging) |
 | `navigator uninstall` | Remove the installed command + config |
 
