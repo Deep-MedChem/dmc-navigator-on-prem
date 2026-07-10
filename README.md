@@ -20,8 +20,12 @@ you choose when to install it by running `navigator update`.
 
 ## Prerequisites
 
-- Linux host with **Docker** (Engine 24+, with the `docker compose` plugin).
-- Registry credentials from Deep-MedChem to pull the image (provided at handoff).
+- A **Linux x86_64 / amd64** host. The published image is currently
+  `linux/amd64` only; arm64 is not a supported production target.
+- **Docker** Engine 24+ with the `docker compose` plugin.
+- **AWS CLI** with the customer source access key supplied by Deep-MedChem.
+  The source identity cannot pull from ECR directly; `navigator login` assumes
+  the short-lived pull role automatically.
 - A license file — issued by Deep-MedChem for your machine (step 3).
 
 ---
@@ -29,26 +33,46 @@ you choose when to install it by running `navigator update`.
 ## 1. Install
 
 ```bash
-git clone <this-repo-url> dmc-navigator-on-prem
+git clone https://github.com/Deep-MedChem/dmc-navigator-on-prem.git
 cd dmc-navigator-on-prem
 ./install_navigator.sh
 ```
 
-This installs the `navigator` command to `~/.local/bin/dmc-navigator` and seeds a
-`.env`. Open a new shell (or `export PATH="$PATH:$HOME/.local/bin/dmc-navigator"`)
-so `navigator` is on your PATH.
+This installs the `navigator` command at
+`~/.local/bin/dmc-navigator/navigator` and seeds `.env` with the production image
+reference. Open a new shell (or
+`export PATH="$PATH:$HOME/.local/bin/dmc-navigator"`) so `navigator` is on your
+PATH.
 
-## 2. Configure and pull the image
+## 2. Authenticate and pull the image
 
-Edit `.env` and set `DMC_NAV_IMAGE` to the registry reference we give you
-(an ECR path such as
-`123456789012.dkr.ecr.eu-central-1.amazonaws.com/on-prem/dmc-navigator/<your-org>`),
-then:
+The checked-in configuration uses this exact shared image:
+
+```text
+815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/dmc-navigator:stable
+```
+
+Configure the source access key supplied by Deep-MedChem under any AWS profile
+name you choose:
 
 ```bash
-navigator login     # authenticate to the registry (ECR uses the AWS CLI)
-navigator pull      # fetch the image
+aws configure --profile dmc-navigator-source
 ```
+
+Then authenticate and pull:
+
+```bash
+AWS_PROFILE=dmc-navigator-source navigator login
+navigator pull
+navigator roster      # public strategy metadata; no license required
+navigator self-test   # packaged-runtime health; no license required
+```
+
+`navigator login` checks the active identity. Unless it is already an
+`arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/...` session, the
+script assumes `arn:aws:iam::815935788477:role/cheese-onprem-pull`, uses those
+temporary credentials only for the ECR password request, and discards them. It
+does not need `jq` and does not write assumed-role credentials to disk.
 
 ## 3. Activate your license
 
@@ -77,18 +101,27 @@ the resumable workflow. Example using the config in your inputs directory:
 
 ```bash
 navigator init  --run-dir runs/hk --config-json inputs/HK.json --overwrite
-navigator propose --run-dir runs/hk
-#   -> runs/hk/proposals/iteration_000_proposals.csv
-#      runs/hk/scores/iteration_000_scores_template.csv
+proposals="$(navigator propose --run-dir runs/hk)"
+# stdout: runs/hk/proposals/iteration_0000_proposals.parquet
+# also writes:
+#   runs/hk/proposals/iteration_0000_proposals.csv
+#   runs/hk/scores/iteration_0000_scores_template.csv
 
-# score the proposed molecules externally, fill in the `score` column, then:
-navigator ingest  --run-dir runs/hk --scores runs/hk/scores/iteration_000_scores.csv
+# Copy the template, set each row's status and score externally, then ingest it.
+cp runs/hk/scores/iteration_0000_scores_template.csv \
+   runs/hk/scores/iteration_0000_scores.csv
+navigator ingest  --run-dir runs/hk --scores runs/hk/scores/iteration_0000_scores.csv
 navigator propose --run-dir runs/hk           # next batch
 navigator status  --run-dir runs/hk
 ```
 
 Paths are relative to the container's working directory: `runs/…` maps to
 `./runs` and `inputs/…` maps to `./inputs` on your host.
+
+The image's self-contained example target is named
+`examples/configs/HK.json` (not `examples/targets/HK.json`). Target configs use
+`space.reactions_path` and `space.synthons_path`; the install smoke-test notebook
+shows how to copy and adapt that example.
 
 Append `--help` to any workflow command for its options
 (`navigator status --help`).
@@ -122,7 +155,7 @@ warns if a campaign narrows to one or two chemotype families.
 
 | Command | Purpose |
 |---|---|
-| `navigator login` | Authenticate Docker to the image registry |
+| `navigator login` | Assume the pull role and authenticate Docker to ECR |
 | `navigator pull` | Pull / update the container image |
 | `navigator update` | Check for a newer production image, pull it, and report whether it changed |
 | `navigator machine-id` | Print this machine's license fingerprint |
@@ -130,8 +163,8 @@ warns if a campaign narrows to one or two chemotype families.
 | `navigator verify-license` | Verify the installed license |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
 | `navigator transition --to <preset>` | Switch strategy, keeping the archive and budget |
-| `navigator roster` | List the available strategy presets (no license needed) |
-| `navigator self-test` | Report runtime health without disclosing data (no license needed) |
+| `navigator roster` | List the public strategy presets (no license required) |
+| `navigator self-test` | Report packaged-runtime health without disclosing data (no license required) |
 | `navigator shell` | Open a shell in the image (debugging) |
 | `navigator uninstall` | Remove the installed command + config |
 
@@ -146,6 +179,12 @@ warns if a campaign narrows to one or two chemotype families.
   that `DMC_NAV_LICENSE_FILE` in `.env` points at it.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
+- **AWS `AccessDenied` during login.** Confirm that the active profile contains
+  the customer source credentials supplied by Deep-MedChem. Do not add ECR
+  permissions to that user; it only needs permission to assume
+  `cheese-onprem-pull`.
+- **arm64 host.** The current release is `linux/amd64` only. Use a supported
+  x86_64 Linux host for production rather than relying on emulation.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
   in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
   Existing runs, inputs, and the installed license remain in place.

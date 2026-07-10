@@ -13,7 +13,7 @@ show_help() {
 dmc-navigator-prod — on-prem
 
 Setup / licensing:
-  navigator login                     Guidance to authenticate to the image registry
+  navigator login                     Assume the pull role and authenticate to ECR
   navigator pull                      Pull the container image
   navigator update                    Pull the image and report whether it changed
   navigator machine-id                Print this machine's license fingerprint

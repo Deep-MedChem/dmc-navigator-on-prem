@@ -1,13 +1,18 @@
 #!/bin/bash
-# Authenticate Docker to the image registry. For AWS ECR this uses the AWS CLI;
-# adjust to whatever credentials Deep-MedChem provides at image handoff.
+# Authenticate Docker to the image registry. Customer IAM users deliberately
+# cannot access ECR directly: for the shared Deep-MedChem ECR registry this
+# script obtains short-lived credentials for cheese-onprem-pull in memory, uses
+# them once to request an ECR password, and never writes them to disk.
 set -euo pipefail
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SELF_DIR}/_compose-env"
 
+PULL_ROLE_ARN="arn:aws:iam::815935788477:role/cheese-onprem-pull"
+PULL_ROLE_SESSION_NAME="dmc-navigator-login"
+
 IMG="${DMC_NAV_IMAGE:-}"
-if [ -z "$IMG" ] || [[ "${IMG,,}" == replace* ]]; then
+if image_is_placeholder; then
   echo "Set DMC_NAV_IMAGE in ${REPO_FOLDER}/.env first (the registry ref we give you)."
   exit 1
 fi
@@ -18,13 +23,99 @@ REGISTRY="${IMG%%/*}"
 if [[ "$REGISTRY" == *.dkr.ecr.*.amazonaws.com ]]; then
   # AWS ECR: region is the 4th dotted field of the host.
   REGION="$(echo "$REGISTRY" | cut -d. -f4)"
-  echo "Logging in to AWS ECR ${REGISTRY} (region ${REGION})..."
   if ! command -v aws >/dev/null 2>&1; then
-    echo "The AWS CLI is required for ECR login. Install it, run 'aws configure' with the"
-    echo "credentials we provide, then re-run 'navigator login'."
+    echo "❌ The AWS CLI is required for ECR login." >&2
+    echo "   Install it and configure the source credentials from Deep-MedChem, then retry." >&2
     exit 1
   fi
-  aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "❌ Docker is required for ECR login." >&2
+    exit 1
+  fi
+
+  # Disable the AWS CLI pager for every captured/non-interactive invocation.
+  export AWS_PAGER=""
+
+  if ! CALLER_ARN="$(aws sts get-caller-identity --query Arn --output text)"; then
+    echo "❌ AWS credentials are missing, expired, or invalid." >&2
+    echo "   Configure the source credentials from Deep-MedChem and retry." >&2
+    exit 1
+  fi
+  unset TEMP_ACCESS_KEY TEMP_SECRET_KEY TEMP_SESSION_TOKEN
+
+  # A role-aware AWS profile may already have assumed the pull role. Do not try
+  # to assume it a second time: that can fail for intentionally restricted role
+  # sessions. All other identities follow the customer bootstrap contract and
+  # assume the exact shared pull role.
+  case "$CALLER_ARN" in
+    arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/*|"$PULL_ROLE_ARN")
+      echo "Using already-assumed cheese-onprem-pull credentials."
+      ;;
+    *)
+      echo "Assuming ${PULL_ROLE_ARN} from ${CALLER_ARN}..."
+      if ! ASSUME_OUTPUT="$(
+        aws sts assume-role \
+          --role-arn "$PULL_ROLE_ARN" \
+          --role-session-name "$PULL_ROLE_SESSION_NAME" \
+          --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+          --output text
+      )"; then
+        echo "❌ Could not assume ${PULL_ROLE_ARN}." >&2
+        echo "   Check that you are using the customer source credentials from Deep-MedChem." >&2
+        exit 1
+      fi
+
+      # AWS text output is tab-separated. `read` handles tabs without jq and the
+      # values remain shell-local; only the one ECR password request receives
+      # them in its environment.
+      read -r TEMP_ACCESS_KEY TEMP_SECRET_KEY TEMP_SESSION_TOKEN <<< "$ASSUME_OUTPUT"
+      unset ASSUME_OUTPUT
+      if [ -z "${TEMP_ACCESS_KEY:-}" ] || [ -z "${TEMP_SECRET_KEY:-}" ] || \
+         [ -z "${TEMP_SESSION_TOKEN:-}" ] || [ "$TEMP_ACCESS_KEY" = "None" ] || \
+         [ "$TEMP_SECRET_KEY" = "None" ] || [ "$TEMP_SESSION_TOKEN" = "None" ]; then
+        unset TEMP_ACCESS_KEY TEMP_SECRET_KEY TEMP_SESSION_TOKEN
+        echo "❌ AWS returned incomplete temporary credentials for ${PULL_ROLE_ARN}." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
+  echo "Logging in to AWS ECR ${REGISTRY} (region ${REGION})..."
+  if [ -n "${TEMP_ACCESS_KEY:-}" ]; then
+    if ! ECR_PASSWORD="$(
+      unset AWS_PROFILE AWS_DEFAULT_PROFILE AWS_SECURITY_TOKEN
+      AWS_ACCESS_KEY_ID="$TEMP_ACCESS_KEY" \
+      AWS_SECRET_ACCESS_KEY="$TEMP_SECRET_KEY" \
+      AWS_SESSION_TOKEN="$TEMP_SESSION_TOKEN" \
+        aws ecr get-login-password --region "$REGION"
+    )"; then
+      unset TEMP_ACCESS_KEY TEMP_SECRET_KEY TEMP_SESSION_TOKEN
+      echo "❌ Could not obtain an ECR login password with the assumed role." >&2
+      exit 1
+    fi
+    unset TEMP_ACCESS_KEY TEMP_SECRET_KEY TEMP_SESSION_TOKEN
+  else
+    if ! ECR_PASSWORD="$(aws ecr get-login-password --region "$REGION")"; then
+      echo "❌ Could not obtain an ECR login password with the current pull-role session." >&2
+      exit 1
+    fi
+  fi
+
+  if [ -z "$ECR_PASSWORD" ]; then
+    echo "❌ AWS returned an empty ECR login password." >&2
+    exit 1
+  fi
+  # Do not pass either source or assumed AWS credentials into the Docker client.
+  if printf '%s' "$ECR_PASSWORD" | (
+    unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN AWS_SECURITY_TOKEN
+    exec docker login --username AWS --password-stdin "$REGISTRY"
+  ); then
+    unset ECR_PASSWORD
+  else
+    unset ECR_PASSWORD
+    echo "❌ Docker could not authenticate to ${REGISTRY}." >&2
+    exit 1
+  fi
 else
   cat <<EOF
 Registry '${REGISTRY}' is not an ECR host. Log in with the credentials we gave you, e.g.:

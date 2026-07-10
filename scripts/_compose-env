@@ -32,14 +32,19 @@ _ensure_dirs() {
 _ensure_dirs
 
 # The image reference, for login/pull guidance and the require_image guard.
-export DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-export DMC_NAV_IMAGE_TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+DMC_NAV_IMAGE_TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+export DMC_NAV_IMAGE DMC_NAV_IMAGE_TAG
 export DMC_NAV_IMAGE_REF="${DMC_NAV_IMAGE:-}:${DMC_NAV_IMAGE_TAG:-stable}"
 
 # A ref is still the unconfigured placeholder if it's empty or starts with
 # "replace" (covers both the old REPLACE_ME... and new replace-me... templates).
 image_is_placeholder() {
-  [ -z "${DMC_NAV_IMAGE:-}" ] || [[ "${DMC_NAV_IMAGE,,}" == replace* ]]
+  [ -z "${DMC_NAV_IMAGE:-}" ] && return 0
+  case "$DMC_NAV_IMAGE" in
+    [Rr][Ee][Pp][Ll][Aa][Cc][Ee]*) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 # require_image — commands that run the container call this FIRST so an
