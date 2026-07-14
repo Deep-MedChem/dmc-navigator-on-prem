@@ -17,10 +17,20 @@ services:
     volumes:
       # Workflow state (writable, persisted on the host).
       - "${DMC_NAV_RUNS_DIR:-./runs}:/opt/dmc-navigator-prod/runs"
+      # Installed encrypted database releases (persisted; `navigator data install`
+      # decrypts into here so a run can mmap them without re-downloading).
+      - "${DMC_NAV_DATABASES_DIR:-./databases}:/opt/dmc-navigator-prod/databases"
       # Your machine-bound license, mounted read-only at the default lookup path.
       - "${DMC_NAV_LICENSE_FILE:-./license.json}:/licenses/dmc_navigator_license.json:ro"
+      # Your database install key (delivered by Deep-MedChem) — unwraps the
+      # sealed data key so encrypted releases decrypt locally. Empty until we
+      # send it; the mount stays valid so all other commands still work.
+      - "${DMC_NAV_DB_INSTALL_KEY_FILE:-./db_install.key}:/licenses/dmc_navigator_db_install.key:ro"
       # Optional: your own reaction/synthon inputs and target configs.
       - "${DMC_NAV_INPUTS_DIR:-./inputs}:/opt/dmc-navigator-prod/inputs"
     environment:
       # Set to 1 to see full Python tracebacks while debugging.
       DMC_NAV_DEBUG: "${DMC_NAV_DEBUG:-}"
+      # Persist installed databases on the mounted volume above (the image's
+      # /var/lib default is not writable as your UID).
+      DMC_NAV_DATA_ROOT: "/opt/dmc-navigator-prod/databases"

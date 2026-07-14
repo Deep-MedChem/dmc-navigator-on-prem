@@ -20,6 +20,13 @@ Setup / licensing:
   navigator update-license <file>     Install a signed license file
   navigator verify-license            Verify the installed license
 
+Databases (encrypted release bundles; require a valid license + install key):
+  navigator data catalog              List the databases you can install
+  navigator data install <db[@rel]>   Download + decrypt + install a release
+  navigator data list                 List installed releases
+  navigator data verify <db@rel>      Re-verify an installed release (offline)
+  navigator data remove <db@rel>      Delete an installed release from disk
+
 Workflow (forwarded to the licensed CLI; require a valid license):
   navigator init  --run-dir runs/<name> --config-json inputs/<target>.json --overwrite
   navigator propose        --run-dir runs/<name>
@@ -51,6 +58,16 @@ case "$cmd" in
   verify-license) exec "${SELF_DIR}/verify-license" "$@" ;;
   uninstall)      exec "${SELF_DIR}/uninstall-navigator" "$@" ;;
   shell)          require_image || exit 1; exec $COMPOSE_CMD run --rm --entrypoint bash navigator "$@" ;;
+  data)
+                  # `data remove` is a purely local delete (no container, no
+                  # license); everything else forwards to the in-container CLI,
+                  # which fetches (network) and decrypts into the databases mount.
+                  if [ "${1:-}" = "remove" ]; then
+                    shift || true
+                    exec "${SELF_DIR}/data-remove" "$@"
+                  fi
+                  require_image || exit 1
+                  exec $COMPOSE_CMD run --rm navigator data "$@" ;;
   # Workflow commands and everything else → the in-container licensed CLI.
   init|propose|ingest|update-params|transition|status|roster|self-test|*)
                   require_image || exit 1

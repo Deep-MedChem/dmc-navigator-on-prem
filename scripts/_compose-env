@@ -21,13 +21,20 @@ export COMPOSE_CMD="docker compose -p ${COMPOSE_PROJECT_NAME} --project-director
 # missing bind source.
 _ensure_dirs() {
   # Pull path values out of .env (fall back to the compose defaults).
-  local runs inputs
+  local runs inputs databases key_file
   runs="$(grep -E '^DMC_NAV_RUNS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
   inputs="$(grep -E '^DMC_NAV_INPUTS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-  runs="${runs:-./runs}"; inputs="${inputs:-./inputs}"
+  databases="$(grep -E '^DMC_NAV_DATABASES_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+  key_file="$(grep -E '^DMC_NAV_DB_INSTALL_KEY_FILE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+  runs="${runs:-./runs}"; inputs="${inputs:-./inputs}"; databases="${databases:-./databases}"
+  key_file="${key_file:-./db_install.key}"
   case "$runs" in /*) : ;; *) runs="${REPO_FOLDER}/${runs#./}" ;; esac
   case "$inputs" in /*) : ;; *) inputs="${REPO_FOLDER}/${inputs#./}" ;; esac
-  mkdir -p "$runs" "$inputs"
+  case "$databases" in /*) : ;; *) databases="${REPO_FOLDER}/${databases#./}" ;; esac
+  case "$key_file" in /*) : ;; *) key_file="${REPO_FOLDER}/${key_file#./}" ;; esac
+  mkdir -p "$runs" "$inputs" "$databases"
+  # Keep the read-only install-key bind mount valid even before the key arrives.
+  [ -e "$key_file" ] || : > "$key_file"
 }
 _ensure_dirs
 

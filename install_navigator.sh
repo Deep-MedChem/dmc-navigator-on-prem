@@ -49,11 +49,15 @@ grep -q '^DMC_NAV_UID=' "${REPO_FOLDER}/.env" || printf 'DMC_NAV_UID=%s\n' "$(id
 grep -q '^DMC_NAV_GID=' "${REPO_FOLDER}/.env" || printf 'DMC_NAV_GID=%s\n' "$(id -g)" >> "${REPO_FOLDER}/.env"
 
 # ── host directories the compose mounts expect ────────────────────────────────
-mkdir -p "${REPO_FOLDER}/runs" "${REPO_FOLDER}/inputs"
+mkdir -p "${REPO_FOLDER}/runs" "${REPO_FOLDER}/inputs" "${REPO_FOLDER}/databases"
 # An empty license placeholder keeps the read-only compose mount valid before a
 # real license arrives. `machine-id` works against it; `verify-license` will
 # report "no license" until you install one.
 [ -e "${REPO_FOLDER}/license.json" ] || : > "${REPO_FOLDER}/license.json"
+# Likewise for the database install key: an empty placeholder keeps the
+# read-only mount valid. `navigator data install` needs the real key (delivered
+# by Deep-MedChem); every other command works without it.
+[ -e "${REPO_FOLDER}/db_install.key" ] || : > "${REPO_FOLDER}/db_install.key"
 
 # ── record repo path for the `navigator` command ─────────────────────────────
 cat > "${CONFIG_DIR}/env.sh" <<EOF
@@ -75,12 +79,13 @@ cat <<EOF
 
 Next steps (open a new shell first, or run: export PATH="\$PATH:${BIN_DIR}"):
   1. configure the AWS source credentials supplied by Deep-MedChem
-  2. navigator login            # assume cheese-onprem-pull and authenticate to ECR
+  2. navigator login            # assume navigator-onprem-pull and authenticate to ECR
   3. navigator pull             # fetch the linux/amd64 image
   4. navigator machine-id       # send the printed ID to Deep-MedChem
   5. navigator update-license <license.json>   # install the license we send back
   6. navigator verify-license   # expect: ✅ Valid license
-  7. navigator status --help    # then run the workflow (init / propose / ingest / ...)
+  7. navigator data install freedom-space-5     # download + decrypt a database (optional)
+  8. navigator status --help    # then run the workflow (init / propose / ingest / ...)
 
 Run 'navigator help' for the full command list.
 EOF

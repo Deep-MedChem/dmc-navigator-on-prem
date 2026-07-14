@@ -1,0 +1,41 @@
+#!/bin/bash
+# `navigator data remove <db@release>` — delete an installed database release
+# from the local databases directory. Purely local: no container, no network, no
+# license. Only ever removes data under the configured databases root.
+set -euo pipefail
+
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SELF_DIR}/_compose-env"
+
+sel="${1:-}"
+case "$sel" in
+  ""|-h|--help)
+    echo "usage: navigator data remove <db-id@release-id>" >&2
+    echo "       (see installed releases with: navigator data list)" >&2
+    [ -z "$sel" ] && exit 2 || exit 0 ;;
+esac
+case "$sel" in
+  *@*) : ;;
+  *) echo "❌ remove needs a db-id@release-id (e.g. freedom-space-5@2026-03-296b.1)" >&2; exit 2 ;;
+esac
+
+# Resolve the host databases dir from .env (same defaulting as _compose-env).
+databases="$(grep -E '^DMC_NAV_DATABASES_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+databases="${databases:-./databases}"
+case "$databases" in /*) : ;; *) databases="${REPO_FOLDER}/${databases#./}" ;; esac
+
+db_id="${sel%@*}"
+release_id="${sel#*@}"
+target="${databases}/${db_id}/${release_id}"
+
+if [ ! -e "$target" ]; then
+  echo "❌ ${sel} is not installed under ${databases}" >&2
+  exit 1
+fi
+
+rm -rf -- "$target" "${target}.prev"
+echo "✅ removed ${sel} from ${databases}"
+
+# Drop the now-empty database directory if this was its last release.
+rmdir --ignore-fail-on-non-empty "${databases}/${db_id}" 2>/dev/null || true

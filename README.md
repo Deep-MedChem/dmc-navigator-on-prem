@@ -11,10 +11,15 @@ Production updates arrive through the `stable` image channel. Deep-MedChem moves
 that tag only after a reviewed on-prem release passes tests and image smoke checks;
 you choose when to install it by running `navigator update`.
 
-- **Offline:** after the image is pulled, no network access is required or made.
+- **Offline:** after the image is pulled the workflow runs with no network
+  access. The one exception is `navigator data` (downloading an encrypted
+  database from Deep-MedChem's public bucket); the databases are also
+  installable fully offline from a local mirror (see
+  [Install a database](#4-install-a-database)).
 - **Licensed:** the image only runs with a valid license issued for *this*
   machine (see [Activate your license](#3-activate-your-license)).
-- **Self-contained:** run state lives in `./runs`, inputs in `./inputs`.
+- **Self-contained:** run state lives in `./runs`, inputs in `./inputs`,
+  installed databases in `./databases`.
 
 ---
 
@@ -69,8 +74,8 @@ navigator self-test   # packaged-runtime health; no license required
 ```
 
 `navigator login` checks the active identity. Unless it is already an
-`arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/...` session, the
-script assumes `arn:aws:iam::815935788477:role/cheese-onprem-pull`, uses those
+`arn:aws:sts::815935788477:assumed-role/navigator-onprem-pull/...` session, the
+script assumes `arn:aws:iam::815935788477:role/navigator-onprem-pull`, uses those
 temporary credentials only for the ECR password request, and discards them. It
 does not need `jq` and does not write assumed-role credentials to disk.
 
@@ -85,8 +90,10 @@ navigator machine-id
 # -> a long integer, e.g. 65422506854891754323540879716734070853
 ```
 
-Send that integer to Deep-MedChem. We return a `license.json`; install and
-verify it (this step does use the image, so `pull` first):
+Send that integer to Deep-MedChem. We return a `license.json` (which also
+carries your database install key, so activating it enables database downloads
+in step 4). Install and verify it (this step does use the image, so `pull`
+first):
 
 ```bash
 navigator update-license /path/to/license.json
@@ -94,7 +101,48 @@ navigator verify-license
 # -> ✅ Valid license (customer='<you>', expires=YYYY-MM-DD)
 ```
 
-## 4. Run the workflow
+## 4. Install a database
+
+Navigator screens a make-on-demand chemical space (reactions + synthons). You
+can bring your own via `./inputs`, or install one of Deep-MedChem's curated
+spaces (e.g. **Freedom Space**, ~1.8M synthons).
+
+Database releases are **client-side encrypted**: the bundles are served from a
+public bucket as ciphertext, so the download needs no credentials, and only your
+machine can decrypt them. The **database install key is embedded in your signed
+license** (the same `license.json` from step 3), so there is normally **nothing
+extra to install** — activating your license also enables database decryption.
+
+> Air-gapped / override: if Deep-MedChem instead sends a standalone key, save it
+> as `./db_install.key` (or point `DMC_NAV_DB_INSTALL_KEY_FILE` in `.env` at it);
+> a non-empty key file takes precedence over the license-embedded key.
+
+Browse and install:
+
+```bash
+navigator data catalog                    # databases you can install
+navigator data install freedom-space-5    # download + verify + decrypt + install
+navigator data list                        # -> ["freedom-space-5@2026-03-296b.1"]
+navigator data verify freedom-space-5@2026-03-296b.1   # re-check signature + hashes
+```
+
+`data install` downloads the encrypted objects, verifies the release's Ed25519
+signature **before** touching any payload, unwraps the data key locally with your
+install key, decrypts, checks every hash, and atomically installs into
+`./databases`. Nothing is decryptable without the install key, and a tampered
+bundle fails closed.
+
+**Fully offline / air-gapped install.** If the host has no internet, copy the
+release bundle onto it (same `catalog/` + `releases/…` layout) and point the
+installer at the local mirror — decryption still happens on-box with your key:
+
+```bash
+navigator data install freedom-space-5 --source /mnt/usb/dmc-navigator-databases
+```
+
+Remove a release you no longer need with `navigator data remove <db@release>`.
+
+## 5. Run the workflow
 
 Put your target config and reaction/synthon inputs under `./inputs`, then drive
 the resumable workflow. Example using the config in your inputs directory:
@@ -115,8 +163,17 @@ navigator propose --run-dir runs/hk           # next batch
 navigator status  --run-dir runs/hk
 ```
 
+To screen an installed database instead of your own inputs, point `init` at it
+with `--database` (and a target):
+
+```bash
+navigator init --run-dir runs/freedom --database freedom-space-5@2026-03-296b.1 \
+  --target inputs/my_target.json --overwrite
+navigator propose --run-dir runs/freedom
+```
+
 Paths are relative to the container's working directory: `runs/…` maps to
-`./runs` and `inputs/…` maps to `./inputs` on your host.
+`./runs`, `inputs/…` to `./inputs`, and installed databases live in `./databases`.
 
 The image's self-contained example target is named
 `examples/configs/HK.json` (not `examples/targets/HK.json`). Target configs use
@@ -161,6 +218,11 @@ warns if a campaign narrows to one or two chemotype families.
 | `navigator machine-id` | Print this machine's license fingerprint |
 | `navigator update-license <file>` | Install a signed license file |
 | `navigator verify-license` | Verify the installed license |
+| `navigator data catalog` | List the databases you can install |
+| `navigator data install <db[@rel]>` | Download + verify + decrypt + install a database release |
+| `navigator data list` | List installed database releases |
+| `navigator data verify <db@rel>` | Re-verify an installed release offline (signature + hashes) |
+| `navigator data remove <db@rel>` | Delete an installed release from `./databases` |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
 | `navigator transition --to <preset>` | Switch strategy, keeping the archive and budget |
 | `navigator roster` | List the public strategy presets (no license required) |
@@ -182,7 +244,7 @@ warns if a campaign narrows to one or two chemotype families.
 - **AWS `AccessDenied` during login.** Confirm that the active profile contains
   the customer source credentials supplied by Deep-MedChem. Do not add ECR
   permissions to that user; it only needs permission to assume
-  `cheese-onprem-pull`.
+  `navigator-onprem-pull`.
 - **arm64 host.** The current release is `linux/amd64` only. Use a supported
   x86_64 Linux host for production rather than relying on emulation.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
