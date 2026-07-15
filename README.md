@@ -144,8 +144,24 @@ Remove a release you no longer need with `navigator data remove <db@release>`.
 
 ## 5. Run the workflow
 
-Put your target config and reaction/synthon inputs under `./inputs`, then drive
-the resumable workflow. Example using the config in your inputs directory:
+**Fastest path — the worked examples.** `examples/run_navigator.sh` drives the
+whole resumable `propose → dock → ingest` loop for you against Freedom Space,
+docking each batch with *your own* Glide, for three ready-made targets (KIF11,
+PYRD, TGFR1). After installing a database (step 4):
+
+```bash
+export SCHRODINGER=/opt/schrodinger2026-1        # your install
+examples/run_navigator.sh TGFR1                  # gamma, 100k budget, 10 rounds, Glide
+examples/run_navigator.sh KIF11 --budget 10k --gpu     # quick run, GPU surrogate
+examples/run_navigator.sh PYRD  --scorer mock --budget 200 --iters 2   # smoke, no Schrödinger
+```
+
+It is resumable (re-run the same command to continue), writes a compiled
+`runs/<run>/pipeline.log`, and lets you pick the strategy (`--method gamma|alpha|beta|analog|all`)
+and budget (`--budget 10k|100k|1m`). See [`examples/README.md`](examples/README.md).
+
+**Manual loop.** To drive the steps yourself, put your target config and
+reaction/synthon inputs under `./inputs`, then:
 
 ```bash
 navigator init  --run-dir runs/hk --config-json inputs/HK.json --overwrite

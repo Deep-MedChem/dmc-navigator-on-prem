@@ -1,0 +1,3 @@
+FORCEFIELD   OPLS_2005
+GRIDFILE   examples/docking/glide-grid_pyrd.zip
+PRECISION   HTVS
