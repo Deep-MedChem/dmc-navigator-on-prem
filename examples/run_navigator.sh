@@ -56,6 +56,14 @@ if [ -z "$NAV" ]; then
   fi
 fi
 
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [ -z "$PYTHON_BIN" ]; then
+  if command -v python3 >/dev/null 2>&1; then PYTHON_BIN=python3
+  elif command -v python >/dev/null 2>&1; then PYTHON_BIN=python
+  else echo "error: no python3/python found on PATH" >&2; exit 1
+  fi
+fi
+
 # ---- defaults / arg parsing -------------------------------------------------
 TARGET=""
 METHOD="${METHOD:-gamma}"
@@ -150,7 +158,7 @@ field() { nav status --run-dir "$1" --field "$2" 2>/dev/null || true; }
 # using only the standard library. Writes to $1.
 render_config() {
   local out="$1" strategy="$2"
-  python3 - "$BASE_CFG" "$out" "$strategy" "$BUDGET_N" "$BATCH" "$POOL" "$DEVICE" "$DATABASE" <<'PY'
+  "$PYTHON_BIN" - "$BASE_CFG" "$out" "$strategy" "$BUDGET_N" "$BATCH" "$POOL" "$DEVICE" "$DATABASE" <<'PY'
 import json, sys
 base, out, strategy, budget, batch, pool, device, database = sys.argv[1:9]
 cfg = json.load(open(base))
@@ -192,7 +200,7 @@ dock_batch() {
       --docking-settings "$REPO/examples/docking/docking_settings.json" --target "$TARGET" \
       "${extra[@]}" >>"$LOG" 2>&1
   else
-    python3 "$REPO/examples/scoring/mock_score.py" \
+    "$PYTHON_BIN" "$REPO/examples/scoring/mock_score.py" \
       --proposals "$REPO/$prop_csv" --out "$scores_abs" >>"$LOG" 2>&1
   fi
   echo "$scores_rel"
