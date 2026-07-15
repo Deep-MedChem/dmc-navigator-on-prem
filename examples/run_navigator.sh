@@ -120,11 +120,22 @@ else
   METHODS=("$(map_method "$METHOD")")
 fi
 
+# Resolve a Schrodinger tool path, preferring "<name>.exe" on Windows if the bare name doesn't exist.
+schrodinger_tool() {
+  local name="$1"
+  if [ -e "$SCHRODINGER/$name" ]; then echo "$SCHRODINGER/$name"
+  elif [ -e "$SCHRODINGER/$name.exe" ]; then echo "$SCHRODINGER/$name.exe"
+  else echo "$SCHRODINGER/$name"
+  fi
+}
+
 # ---- device / scorer sanity -------------------------------------------------
 if [ "$GPU" = "1" ]; then DEVICE=cuda; else DEVICE=cpu; fi
 if [ -z "$SCORER_CMD" ] && [ "$SCORER" = "glide" ] && [ "$STATUS_ONLY" != "1" ]; then
   : "${SCHRODINGER:?SCHRODINGER is not set. Point it at your Schrodinger install for Glide, or use --scorer mock.}"
-  [ -x "$SCHRODINGER/glide" ] || { echo "error: \$SCHRODINGER/glide not found ($SCHRODINGER/glide)" >&2; exit 1; }
+  GLIDE_BIN="$(schrodinger_tool glide)"
+  # -e not -x: the executable bit is unreliable on Windows-mounted filesystems.
+  [ -e "$GLIDE_BIN" ] || { echo "error: Schrodinger glide not found at $SCHRODINGER/glide (or glide.exe)" >&2; exit 1; }
 fi
 
 # =============================================================================
@@ -176,7 +187,7 @@ dock_batch() {
       --proposals "$REPO/$prop_csv" --out "$scores_abs" --target "$TARGET" \
       "${extra[@]}" >>"$LOG" 2>&1
   elif [ "$SCORER" = "glide" ]; then
-    "$SCHRODINGER/run" python3 "$REPO/examples/scoring/glide_batch.py" \
+    "$(schrodinger_tool run)" python3 "$REPO/examples/scoring/glide_batch.py" \
       --proposals "$REPO/$prop_csv" --out "$scores_abs" \
       --docking-settings "$REPO/examples/docking/docking_settings.json" --target "$TARGET" \
       "${extra[@]}" >>"$LOG" 2>&1
