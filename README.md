@@ -35,6 +35,53 @@ you choose when to install it by running `navigator update`.
 
 ---
 
+## Running on Windows
+
+Not the primary target, but fully working via Docker Desktop + WSL2. A few things are Windows-specific
+enough to call out separately from the Linux instructions above.
+
+### Setup
+
+1. **Docker Desktop**, with WSL2 as the backend. Current Docker Desktop versions no longer offer a
+   Hyper-V alternative for Linux containers, so WSL2 is effectively required, not optional. In
+   Settings → Resources → WSL Integration, enable integration for your distro.
+2. **AWS CLI + credentials** — same requirement as Linux (see Prerequisites above); install and
+   configure inside your WSL2 distro.
+3. **Git Bash** (bundled with "Git for Windows", https://git-scm.com/download/win) — use this
+   specifically to run `examples/run_navigator.sh`, **not WSL2**. WSL2 is a real Linux VM; calling a
+   *native Windows* Schrodinger install (`glide.exe`/`ligprep.exe`) across that VM boundary risks
+   path-translation and executable-resolution failures. Git Bash runs as a native Windows process, so
+   it can call native `.exe` files directly with no such risk. `navigator`/Docker commands themselves
+   work fine from either shell — it's specifically the Glide-calling step that needs Git Bash.
+4. **`$SCHRODINGER`**, set to the native Windows path in Git Bash's path form, e.g.:
+   ```bash
+   export SCHRODINGER="/c/Program Files/Schrodinger2024-3"
+   ```
+
+### Known gotchas
+
+- **Docker Desktop's WSL integration sometimes doesn't activate on the first toggle.** If `docker` isn't
+  found inside your distro or Git Bash after enabling it, do a *full* Docker Desktop restart — quit it
+  entirely from the system tray (not just close the window) — then relaunch and retry.
+- **`conda activate` fails with "Run 'conda init' before 'conda activate'"** even right after running
+  `conda init`. Conda's hook only loads in a *fresh* terminal window — for PowerShell/cmd, just reopen
+  the window. **For Git Bash specifically**, this isn't enough on its own: `conda init` hooks
+  `~/.bashrc`, but Git Bash's login-shell startup reads `~/.bash_profile`, which doesn't source
+  `~/.bashrc` by default. Fix once with:
+  ```bash
+  echo 'source ~/.bashrc' >> ~/.bash_profile
+  ```
+- **Plain `Ctrl+C`/`Ctrl+V` don't work as copy/paste in Git Bash** by default — `Ctrl+C` is reserved to
+  send an interrupt signal, standard terminal behavior. Right-click pastes clipboard content directly
+  (always works); selecting text often auto-copies. `Ctrl+Shift+C`/`Ctrl+Shift+V` may also work, and the
+  behavior can be changed in the window's Options if you prefer plain Ctrl+C/V.
+- **A fresh `git clone` needs its own license installed.** `install_navigator.sh` seeds an *empty*
+  placeholder `license.json` — if you clone into a new directory, you'll need to
+  `navigator update-license <path-to-your-license.json>` there too, even if you already activated a
+  license in another checkout on the same machine.
+
+---
+
 ## 1. Install
 
 ```bash
