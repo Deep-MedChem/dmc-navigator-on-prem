@@ -304,6 +304,17 @@ warns if a campaign narrows to one or two chemotype families.
   report a hardware-fingerprint mismatch.
 - **"No license found".** Install one with `navigator update-license`, or check
   that `DMC_NAV_LICENSE_FILE` in `.env` points at it.
+- **`navigator data install` fails.** First `navigator update` (older images had a
+  compatibility bug — fixed in 0.2.6 — that blocked all installs; the error
+  mentioned an `rdkit … incompatible` bundle). Installs need a valid license (the
+  install key is embedded in it) — check `navigator verify-license`. Each release
+  is verified (signature + per-file hashes) before anything is written, so a
+  failed/interrupted install leaves nothing partially installed; just re-run it.
+  Ensure free disk for the release (e.g. Enamine REAL v5a ≈ 1.1 GB encrypted).
+- **GPU / `--gpu` seems to run on CPU.** The surrogate only uses CUDA if the
+  container has GPU access. Set `DMC_NAV_GPUS=all` in `.env` (needs an NVIDIA
+  driver + the NVIDIA Container Toolkit on the host; see `docker-compose.gpu.yml`).
+  Without it, `--gpu` / `surrogate.device=cuda` safely falls back to CPU.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
 - **AWS `AccessDenied` during login.** Confirm that the active profile contains

@@ -17,6 +17,15 @@ export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-dmc-navigator}"
 # --project-directory makes compose load REPO_FOLDER/.env regardless of cwd.
 export COMPOSE_CMD="docker compose -p ${COMPOSE_PROJECT_NAME} --project-directory ${REPO_FOLDER} -f ${COMPOSE_FILE}"
 
+# Opt-in GPU: if DMC_NAV_GPUS is set in .env (e.g. =all), layer the GPU override
+# so the container gets NVIDIA GPU access (needed for surrogate.device=cuda /
+# run_navigator.sh --gpu). Requires the NVIDIA Container Toolkit on the host.
+_gpu="$(grep -E '^DMC_NAV_GPUS=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+GPU_COMPOSE_FILE="${REPO_FOLDER}/docker-compose.gpu.yml"
+if [ -n "${_gpu:-}" ] && [ -f "$GPU_COMPOSE_FILE" ]; then
+  export COMPOSE_CMD="${COMPOSE_CMD} -f ${GPU_COMPOSE_FILE}"
+fi
+
 # Ensure the writable mount points exist so `compose run` never fails on a
 # missing bind source.
 _ensure_dirs() {

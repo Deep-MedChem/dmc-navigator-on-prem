@@ -2,14 +2,22 @@
   "schema_version": "1",
   "target": "PYRD",
   "strategy": "gamma_diversity_screening",
-  "objective": {"direction": "minimize", "hit_threshold": -12.5},
-  "budget": {"submitted": 100000, "batch_size": 10000},
+  "objective": {
+    "direction": "minimize",
+    "hit_threshold": -12.5
+  },
+  "budget": {
+    "submitted": 100000,
+    "batch_size": 10000
+  },
   "candidate_pool_size": 20000,
   "seed": 0,
   "surrogate": {
     "preset": "synthon-or-xgb-v1",
     "device": "cpu",
-    "allow_cpu_fallback": true
+    "allow_cpu_fallback": true,
+    "training_filter": "glide",
+    "penalty_mode": "exclude"
   },
   "space": {
     "database": "freedom-space-5@2026-03-296b.2",
@@ -18,17 +26,38 @@
     "sampling_regime": "product_weighted",
     "additive_margin_policy": "max",
     "property_constraints": {
-      "MolWt": {"max": 500.0},
-      "MolLogP": {"min": -10.0, "max": 5.0},
-      "NumHAcceptors": {"max": 10},
-      "NumHDonors": {"max": 5},
-      "NumRotatableBonds": {"max": 10},
-      "FractionCSP3": {"min": 0.10, "max": 0.80},
-      "TPSA": {"max": 140.0},
-      "NumAromaticRings": {"min": 1, "max": 5}
+      "MolWt": {
+        "max": 500.0
+      },
+      "MolLogP": {
+        "min": -10.0,
+        "max": 5.0
+      },
+      "NumHAcceptors": {
+        "max": 10
+      },
+      "NumHDonors": {
+        "max": 5
+      },
+      "NumRotatableBonds": {
+        "max": 10
+      },
+      "FractionCSP3": {
+        "min": 0.1,
+        "max": 0.8
+      },
+      "TPSA": {
+        "max": 140.0
+      },
+      "NumAromaticRings": {
+        "min": 1,
+        "max": 5
+      }
     }
   },
-  "selection": {"diversity": 0.1},
+  "selection": {
+    "diversity": 0.1
+  },
   "metadata": {
     "note": "PYRD (dihydroorotate dehydrogenase) screen over Freedom Space 5 with Glide docking. property_constraints is the additive (generation-time) prefilter matching the internal SpaceHASTEN drug-like filter (MolWt<=500, cLogP in [-10,5], HBA<=10, HBD<=5, RotB<=10, FractionCsp3 in [0.10,0.80], TPSA<=140, aromatic rings in [1,5]); it is approximate and identical across KIF11/PYRD/TGFR1. Exact-structure exclusions used internally (fluorine<=1, amide<=2, and reactive-group SMARTS: nitro/aldehyde/acyl-chloride/thiol/enone/vinyl-sulfone/acrylonitrile/nitro-alkene/N-oxide) are NOT additive and are left to your scoring/curation step. hit_threshold -12.5 is the internal GlideScore hit cutoff (minimize) for PYRD; it is reporting-only (drives the 'hits' count and analog_harvest readiness) and does not steer the search. Thresholds were calibrated on Glide HTVS/OPLS_2005; Epik-ON scores sit ~2 kcal less negative, so treat it as a relative marker on your own grid. budget/batch_size are overridden by examples/run_navigator.sh (default 100k over 10 iterations).",
     "docking_settings": "../docking/docking_settings.json"
