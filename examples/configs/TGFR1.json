@@ -9,9 +9,7 @@
   "surrogate": {
     "preset": "synthon-or-xgb-v1",
     "device": "cpu",
-    "allow_cpu_fallback": true,
-    "training_filter": "glide",
-    "penalty_mode": "exclude"
+    "allow_cpu_fallback": true
   },
   "space": {
     "database": "freedom-space-5@2026-03-296b.2",

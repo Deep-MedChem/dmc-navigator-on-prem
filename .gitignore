@@ -1,6 +1,7 @@
 # Local, machine-specific, or secret — never commit.
 .env
 license.json
+db_install.key
 *.pem
 *.tar
 *.tar.gz
@@ -8,6 +9,7 @@ license.json
 # Runtime data (created by the installer / at run time).
 runs/
 inputs/
+databases/
 
 # Cruft
 __pycache__/

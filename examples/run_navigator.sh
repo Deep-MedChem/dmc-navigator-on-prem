@@ -20,6 +20,10 @@
 #   --iters   N   number of propose/dock/ingest rounds (default 10)
 #   --database S  installed release selector (default freedom-space-5@2026-03-296b.2)
 #   --scorer  S   glide (default; needs $SCHRODINGER) | mock (no-Schrodinger smoke)
+#   --scorer-cmd "<cmd>"  bring-your-own docking: a command that will be called as
+#                 <cmd> --proposals <csv> --out <csv> --target <T> [--precision P]
+#                 and must write the batch_id,product_id,status,score CSV. Overrides
+#                 --scorer (use for your own docking engine / scheduler).
 #   --pool    N   surrogate candidate-pool size per round (default 20000)
 #   --gpu         run the XGBoost surrogate on CUDA (falls back to CPU if absent)
 #   --precision P HTVS (default) | SP | XP   (Glide precision, overrides settings)
@@ -59,6 +63,7 @@ BUDGET="${BUDGET:-100k}"
 ITERS="${ITERS:-10}"
 DATABASE="${DATABASE:-freedom-space-5@2026-03-296b.2}"
 SCORER="${SCORER:-glide}"
+SCORER_CMD="${SCORER_CMD:-}"
 POOL="${POOL:-20000}"
 GPU="${GPU:-0}"
 PRECISION="${PRECISION:-}"
@@ -72,6 +77,7 @@ while [ "$#" -gt 0 ]; do
     --iters)     ITERS="$2"; shift 2 ;;
     --database)  DATABASE="$2"; shift 2 ;;
     --scorer)    SCORER="$2"; shift 2 ;;
+    --scorer-cmd) SCORER_CMD="$2"; shift 2 ;;
     --pool)      POOL="$2"; shift 2 ;;
     --gpu)       GPU=1; shift ;;
     --precision) PRECISION="$2"; shift 2 ;;
@@ -116,7 +122,7 @@ fi
 
 # ---- device / scorer sanity -------------------------------------------------
 if [ "$GPU" = "1" ]; then DEVICE=cuda; else DEVICE=cpu; fi
-if [ "$SCORER" = "glide" ] && [ "$STATUS_ONLY" != "1" ]; then
+if [ -z "$SCORER_CMD" ] && [ "$SCORER" = "glide" ] && [ "$STATUS_ONLY" != "1" ]; then
   : "${SCHRODINGER:?SCHRODINGER is not set. Point it at your Schrodinger install for Glide, or use --scorer mock.}"
   [ -x "$SCHRODINGER/glide" ] || { echo "error: \$SCHRODINGER/glide not found ($SCHRODINGER/glide)" >&2; exit 1; }
 fi
@@ -160,9 +166,16 @@ dock_batch() {
   scores_rel="$(dirname "$pdir")/scores/${iter}_scores.csv"
   scores_abs="$REPO/$scores_rel"
   mkdir -p "$(dirname "$scores_abs")"
-  if [ "$SCORER" = "glide" ]; then
-    local extra=()
-    [ -n "$PRECISION" ] && extra+=(--precision "$PRECISION")
+  local extra=()
+  [ -n "$PRECISION" ] && extra+=(--precision "$PRECISION")
+  if [ -n "$SCORER_CMD" ]; then
+    # Bring-your-own docking: <cmd> --proposals <csv> --out <csv> --target <T> [--precision P]
+    local cmd_arr=()
+    read -r -a cmd_arr <<< "$SCORER_CMD"
+    "${cmd_arr[@]}" \
+      --proposals "$REPO/$prop_csv" --out "$scores_abs" --target "$TARGET" \
+      "${extra[@]}" >>"$LOG" 2>&1
+  elif [ "$SCORER" = "glide" ]; then
     "$SCHRODINGER/run" python3 "$REPO/examples/scoring/glide_batch.py" \
       --proposals "$REPO/$prop_csv" --out "$scores_abs" \
       --docking-settings "$REPO/examples/docking/docking_settings.json" --target "$TARGET" \

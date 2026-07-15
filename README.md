@@ -122,8 +122,8 @@ Browse and install:
 ```bash
 navigator data catalog                    # databases you can install
 navigator data install freedom-space-5    # download + verify + decrypt + install
-navigator data list                        # -> ["freedom-space-5@2026-03-296b.1"]
-navigator data verify freedom-space-5@2026-03-296b.1   # re-check signature + hashes
+navigator data list                        # -> ["freedom-space-5@2026-03-296b.2"]
+navigator data verify freedom-space-5@2026-03-296b.2   # re-check signature + hashes
 ```
 
 `data install` downloads the encrypted objects, verifies the release's Ed25519
@@ -183,7 +183,7 @@ To screen an installed database instead of your own inputs, point `init` at it
 with `--database` (and a target):
 
 ```bash
-navigator init --run-dir runs/freedom --database freedom-space-5@2026-03-296b.1 \
+navigator init --run-dir runs/freedom --database freedom-space-5@2026-03-296b.2 \
   --target inputs/my_target.json --overwrite
 navigator propose --run-dir runs/freedom
 ```

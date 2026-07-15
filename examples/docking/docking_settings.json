@@ -1,8 +1,9 @@
 {
-  "_comment": "Per-target Glide settings consumed by examples/scoring/glide_batch.py. `binding_site` points at a Glide .in file (repo-root-relative) whose GRIDFILE line names the grid .zip. These are example grids for public benchmark pockets; replace them with your own grid for production work. Protocol matches the internal reference runs: Glide HTVS / OPLS_2005 / 1 pose / LigPrep+Epik at pH 7.4. Raw GlideScore column is r_i_docking_score (minimize).",
+  "_comment": "Per-target Glide settings consumed by examples/scoring/glide_batch.py. `binding_site` points at a Glide .in file (repo-root-relative) whose GRIDFILE line names the grid .zip. These are example grids for public benchmark pockets; replace them with your own grid for production work. Protocol matches the internal reference runs: Glide HTVS / OPLS_2005 / 1 pose / LigPrep+Epik(classic) at pH 7.4. `forcefield` MUST stay OPLS_2005 for these grids/thresholds — Glide 2024+ defaults to OPLS4 when unset, which shifts every score. Raw GlideScore column is r_i_docking_score (minimize).",
   "KIF11": {
     "engine": "glide",
     "precision": "HTVS",
+    "forcefield": "OPLS_2005",
     "binding_site": "examples/docking/glide-dock_kif11.in",
     "ph": 7.4,
     "n_poses": 1,
@@ -11,6 +12,7 @@
   "PYRD": {
     "engine": "glide",
     "precision": "HTVS",
+    "forcefield": "OPLS_2005",
     "binding_site": "examples/docking/glide-dock_pyrd.in",
     "ph": 7.4,
     "n_poses": 1,
@@ -19,6 +21,7 @@
   "TGFR1": {
     "engine": "glide",
     "precision": "HTVS",
+    "forcefield": "OPLS_2005",
     "binding_site": "examples/docking/glide-dock_tgfr1.in",
     "ph": 7.4,
     "n_poses": 1,

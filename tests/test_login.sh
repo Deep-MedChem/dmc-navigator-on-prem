@@ -56,7 +56,7 @@ case "${FAKE_SCENARIO}:$1:$2" in
     printf '%s\n' 'fake-ecr-password'
     ;;
   assumed:sts:get-caller-identity)
-    printf '%s\n' 'arn:aws:sts::815935788477:assumed-role/cheese-onprem-pull/existing-session'
+    printf '%s\n' 'arn:aws:sts::815935788477:assumed-role/navigator-onprem-pull/existing-session'
     ;;
   assumed:sts:assume-role)
     echo 'already-assumed identity must not assume the role again' >&2
@@ -119,7 +119,7 @@ test_restricted_source_identity() {
   fi
 
   assert_contains "$dir/aws.log" "sts get-caller-identity --query Arn --output text"
-  assert_contains "$dir/aws.log" "sts assume-role --role-arn arn:aws:iam::815935788477:role/cheese-onprem-pull"
+  assert_contains "$dir/aws.log" "sts assume-role --role-arn arn:aws:iam::815935788477:role/navigator-onprem-pull"
   assert_contains "$dir/aws.log" "ecr get-login-password --region us-east-1"
   assert_contains "$dir/docker.log" "login --username AWS --password-stdin 815935788477.dkr.ecr.us-east-1.amazonaws.com"
   [ ! -e "$dir/home/.aws" ] || fail "login persisted temporary credentials under HOME"
@@ -142,7 +142,7 @@ test_already_assumed_identity() {
 
   assert_not_contains "$dir/aws.log" "sts assume-role"
   assert_contains "$dir/aws.log" "ecr get-login-password --region us-east-1"
-  assert_contains "$dir/stdout" "Using already-assumed cheese-onprem-pull credentials."
+  assert_contains "$dir/stdout" "Using already-assumed navigator-onprem-pull credentials."
   echo "ok - already-assumed identity is reused"
 }
 
@@ -154,7 +154,7 @@ test_assume_role_failure_is_fail_closed() {
   fi
 
   assert_contains "$dir/stderr" "simulated AccessDenied"
-  assert_contains "$dir/stderr" "Could not assume arn:aws:iam::815935788477:role/cheese-onprem-pull."
+  assert_contains "$dir/stderr" "Could not assume arn:aws:iam::815935788477:role/navigator-onprem-pull."
   [ ! -s "$dir/docker.log" ] || fail "docker login ran after sts:AssumeRole failure"
   assert_not_contains "$dir/stdout" "fake-session-token"
   assert_not_contains "$dir/stderr" "fake-session-token"
