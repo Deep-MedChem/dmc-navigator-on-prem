@@ -326,6 +326,21 @@ warns if a campaign narrows to one or two chemotype families.
   Without it, `--gpu` / `surrogate.device=cuda` safely falls back to CPU.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
+- **`error while creating mount source path … mkdir …: permission denied`
+  (NFS home).** If the repo lives on an NFS-mounted directory (a shared home
+  drive), the Docker *daemon* — which runs as root and is mapped to an
+  unprivileged user by NFS `root_squash` — cannot access the bind-mount paths,
+  even though your own user can. This is expected, not a permissions bug on your
+  files; widening file modes does not help (the daemon is blocked traversing the
+  NFS mount itself). Fix it by putting the install on **local (non-NFS) disk** —
+  clone into e.g. `/opt/dmc-navigator` or a local scratch dir and re-run
+  `install_navigator.sh` (your license is bound to the host, not the folder, so
+  the same `license.json` still verifies — no reissue needed). If you must keep
+  the repo on NFS, point the data paths at local disk instead by setting
+  `DMC_NAV_RUNS_DIR`, `DMC_NAV_DATABASES_DIR`, `DMC_NAV_INPUTS_DIR`,
+  `DMC_NAV_LICENSE_FILE`, and `DMC_NAV_DB_INSTALL_KEY_FILE` in `.env` to absolute
+  local paths. (Alternatively, an NFS export mounted `no_root_squash` also works,
+  but that is a host/sysadmin decision.)
 - **AWS `AccessDenied` during login.** Confirm that the active profile contains
   the customer source credentials supplied by Deep-MedChem. Do not add ECR
   permissions to that user; it only needs permission to assume
