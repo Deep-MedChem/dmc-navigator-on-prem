@@ -304,13 +304,12 @@ warns if a campaign narrows to one or two chemotype families.
   report a hardware-fingerprint mismatch.
 - **"No license found".** Install one with `navigator update-license`, or check
   that `DMC_NAV_LICENSE_FILE` in `.env` points at it.
-- **`navigator data install` fails.** First `navigator update` (older images had a
-  compatibility bug — fixed in 0.2.6 — that blocked all installs; the error
-  mentioned an `rdkit … incompatible` bundle). Installs need a valid license (the
-  install key is embedded in it) — check `navigator verify-license`. Each release
-  is verified (signature + per-file hashes) before anything is written, so a
-  failed/interrupted install leaves nothing partially installed; just re-run it.
-  Ensure free disk for the release (e.g. Enamine REAL v5a ≈ 1.1 GB encrypted).
+- **`navigator data install` fails.** Make sure you are on the current image
+  (`navigator update`), that you have a valid license (the install key is embedded
+  in it — check `navigator verify-license`), and that there is free disk for the
+  release (e.g. Enamine REAL v5a ≈ 1.1 GB encrypted). Each release is verified
+  (signature + per-file hashes) before anything is written, so a failed or
+  interrupted install leaves nothing partially installed — just re-run it.
 - **GPU / `--gpu` seems to run on CPU.** The surrogate only uses CUDA if the
   container has GPU access. Set `DMC_NAV_GPUS=all` in `.env` (needs an NVIDIA
   driver + the NVIDIA Container Toolkit on the host; see `docker-compose.gpu.yml`).
@@ -326,5 +325,3 @@ warns if a campaign narrows to one or two chemotype families.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
   in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
   Existing runs, inputs, and the installed license remain in place.
-- **Existing `latest` installs.** Change `DMC_NAV_IMAGE_TAG=latest` to
-  `DMC_NAV_IMAGE_TAG=stable` in `.env` once, then run `navigator update`.
