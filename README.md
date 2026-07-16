@@ -33,6 +33,16 @@ you choose when to install it by running `navigator update`.
   the short-lived pull role automatically.
 - A license file — issued by Deep-MedChem for your machine (step 3).
 
+> **Deep-MedChem provides you two separate credentials, and you need both.** They
+> are independent — one does not include the other:
+> 1. an **AWS source access key** (delivered via 1Password) used to pull the
+>    container image from our registry — step 2;
+> 2. your **license file** (`license.json`), which binds the image to this machine
+>    and carries your database install key — step 3.
+>
+> The license does *not* grant registry access, and the AWS key does *not*
+> unlock the software. If you only received one, ask us for the other.
+
 ---
 
 ## 1. Install
