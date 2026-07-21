@@ -15,7 +15,7 @@
 #   <TARGET>            KIF11 | PYRD | TGFR1   (an examples/configs/<TARGET>.json)
 #
 # Options (env vars or flags):
-#   --method  M   gamma (default) | alpha | beta | analog | all | <preset-name>
+#   --method  M   gamma (default) | ga | accurate | fast | all | <preset-name>
 #   --budget  B   10k | 100k (default) | 1m | <integer>     total molecules docked
 #   --iters   N   number of propose/dock/ingest rounds (default 10)
 #   --database S  installed release selector (default freedom-space-5@2026-03-296b.2)
@@ -33,7 +33,7 @@
 # Examples:
 #   examples/run_navigator.sh TGFR1                         # gamma, 100k, Glide
 #   examples/run_navigator.sh KIF11 --budget 10k --gpu      # quick GPU run
-#   examples/run_navigator.sh PYRD  --method all            # all 4 strategies
+#   examples/run_navigator.sh PYRD  --method all            # all 4 default/supported strategies
 #   examples/run_navigator.sh TGFR1 --scorer mock --budget 200 --iters 2  # smoke
 #
 # Prerequisites: `navigator` installed (install_navigator.sh) with the image
@@ -115,15 +115,17 @@ BATCH=$(( BUDGET_N / ITERS ))
 # ---- resolve method(s) ------------------------------------------------------
 map_method() {
   case "$1" in
-    gamma)   echo gamma_diversity_screening ;;
-    alpha)   echo alpha_diversity_screening ;;
-    beta)    echo beta_diversity_screening ;;
-    analog)  echo analog_harvest ;;
-    *)       echo "$1" ;;   # already a full preset name
+    gamma)           echo gamma_diversity_screening ;;
+    ga|v14)          echo ga_dcso_v14_screening ;;
+    accurate|analog) echo analog_harvest_accurate ;;
+    fast)            echo analog_harvest_fast ;;
+    # 'alpha' and 'beta' were retired in 0.3.0 (-> gamma / ga_dcso_v14); a full
+    # retired preset name falls through and stops with a migration message.
+    *)               echo "$1" ;;   # already a full preset name
   esac
 }
 if [ "$METHOD" = "all" ]; then
-  METHODS=(gamma_diversity_screening alpha_diversity_screening beta_diversity_screening analog_harvest)
+  METHODS=(gamma_diversity_screening ga_dcso_v14_screening analog_harvest_accurate analog_harvest_fast)
 else
   METHODS=("$(map_method "$METHOD")")
 fi

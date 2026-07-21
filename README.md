@@ -253,7 +253,7 @@ examples/run_navigator.sh PYRD  --scorer mock --budget 200 --iters 2   # smoke, 
 ```
 
 It is resumable (re-run the same command to continue), writes a compiled
-`runs/<run>/pipeline.log`, and lets you pick the strategy (`--method gamma|alpha|beta|analog|all`)
+`runs/<run>/pipeline.log`, and lets you pick the strategy (`--method gamma|ga|accurate|fast|all`)
 and budget (`--budget 10k|100k|1m`). See [`examples/README.md`](examples/README.md).
 
 **Manual loop.** To drive the steps yourself, put your target config and
@@ -302,21 +302,26 @@ target config (`navigator roster` lists them):
 
 | Preset | Role |
 |---|---|
-| `alpha_diversity_screening` | **Default.** Broad global discovery — start here. |
-| `gamma_diversity_screening` | Faster/balanced alternative screen. |
-| `beta_diversity_screening` | Advanced exploration (experimental). |
-| `analog_harvest` | Harvest analogs of your best chemotypes (beta). |
+| `gamma_diversity_screening` | **Default.** Broad global discovery — start here (balanced cross-entropy screen). |
+| `ga_dcso_v14_screening` | Advanced annealed genetic-algorithm exploration; the complementary GA discovery screen. |
+| `analog_harvest_accurate` | Harvest analogs of your best chemotypes, surrogate-ranked (the 'accurate' harvest). |
+| `analog_harvest_fast` | The same analog harvest without surrogate re-ranking (the 'fast' harvest; formerly `analog_harvest`, still a deprecated alias). |
 
-Recommended: run `alpha_diversity_screening` first; once you have measured hits,
+Recommended: run `gamma_diversity_screening` first; once you have measured hits,
 switch to analog harvesting over the same archive and budget:
 
 ```bash
-navigator transition --run-dir runs/hk --to analog_harvest
+navigator transition --run-dir runs/hk --to analog_harvest_accurate
 navigator propose    --run-dir runs/hk
 ```
 
-`analog_harvest` reports how concentrated its hits are on every proposal and
-warns if a campaign narrows to one or two chemotype families.
+The analog-harvest presets report how concentrated their hits are on every
+proposal and warn if a campaign narrows to one or two chemotype families.
+
+> **Migration (0.3.0).** `alpha_diversity_screening` (the previous default) was
+> retired; use `gamma_diversity_screening`. `beta_diversity_screening` was
+> retired; use `ga_dcso_v14_screening`. A config naming a retired preset stops
+> with a message naming its replacement — it never silently switches algorithm.
 
 ---
 
