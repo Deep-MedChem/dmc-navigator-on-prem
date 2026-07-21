@@ -341,6 +341,7 @@ proposal and warn if a campaign narrows to one or two chemotype families.
 | `navigator data verify <db@rel>` | Re-verify an installed release offline (signature + hashes) |
 | `navigator data remove <db@rel>` | Delete an installed release from `./databases` |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
+| `navigator random <N> --mode pw\|rw --output <csv> --database <db>` | Random-sample N molecules from a space to an `id,smiles` CSV (pw = product-weighted, rw = reaction-weighted); optional `--filter-profile druglike-v1`, `--seed` |
 | `navigator transition --to <preset>` | Switch strategy, keeping the archive and budget |
 | `navigator roster` | List the public strategy presets (no license required) |
 | `navigator self-test` | Report packaged-runtime health without disclosing data (no license required) |
