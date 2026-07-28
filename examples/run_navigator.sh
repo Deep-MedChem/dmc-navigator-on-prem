@@ -15,7 +15,7 @@
 #   <TARGET>            KIF11 | PYRD | TGFR1   (an examples/configs/<TARGET>.json)
 #
 # Options (env vars or flags):
-#   --method  M   gamma (default) | alpha | beta | analog | all | <preset-name>
+#   --method  M   gamma (default) | ga | accurate | fast | all | <preset-name>
 #   --budget  B   10k | 100k (default) | 1m | <integer>     total molecules docked
 #   --iters   N   number of propose/dock/ingest rounds (default 10)
 #   --database S  installed release selector (default freedom-space-5@2026-03-296b.2)
@@ -33,7 +33,7 @@
 # Examples:
 #   examples/run_navigator.sh TGFR1                         # gamma, 100k, Glide
 #   examples/run_navigator.sh KIF11 --budget 10k --gpu      # quick GPU run
-#   examples/run_navigator.sh PYRD  --method all            # all 4 strategies
+#   examples/run_navigator.sh PYRD  --method all            # all 4 default/supported strategies
 #   examples/run_navigator.sh TGFR1 --scorer mock --budget 200 --iters 2  # smoke
 #
 # Prerequisites: `navigator` installed (install_navigator.sh) with the image
@@ -53,6 +53,14 @@ if [ -z "$NAV" ]; then
   if command -v navigator >/dev/null 2>&1; then NAV="navigator"
   elif [ -x "$HOME/.local/bin/dmc-navigator/navigator" ]; then NAV="$HOME/.local/bin/dmc-navigator/navigator"
   else echo "error: 'navigator' not found on PATH. Run ./install_navigator.sh and open a new shell." >&2; exit 1
+  fi
+fi
+
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [ -z "$PYTHON_BIN" ]; then
+  if command -v python3 >/dev/null 2>&1; then PYTHON_BIN=python3
+  elif command -v python >/dev/null 2>&1; then PYTHON_BIN=python
+  else echo "error: no python3/python found on PATH" >&2; exit 1
   fi
 fi
 
@@ -107,24 +115,37 @@ BATCH=$(( BUDGET_N / ITERS ))
 # ---- resolve method(s) ------------------------------------------------------
 map_method() {
   case "$1" in
-    gamma)   echo gamma_diversity_screening ;;
-    alpha)   echo alpha_diversity_screening ;;
-    beta)    echo beta_diversity_screening ;;
-    analog)  echo analog_harvest ;;
-    *)       echo "$1" ;;   # already a full preset name
+    gamma)           echo gamma_diversity_screening ;;
+    ga|v14)          echo ga_dcso_v14_screening ;;
+    accurate|analog) echo analog_harvest_accurate ;;
+    fast)            echo analog_harvest_fast ;;
+    # 'alpha' and 'beta' were retired in 0.3.0 (-> gamma / ga_dcso_v14); a full
+    # retired preset name falls through and stops with a migration message.
+    *)               echo "$1" ;;   # already a full preset name
   esac
 }
 if [ "$METHOD" = "all" ]; then
-  METHODS=(gamma_diversity_screening alpha_diversity_screening beta_diversity_screening analog_harvest)
+  METHODS=(gamma_diversity_screening ga_dcso_v14_screening analog_harvest_accurate analog_harvest_fast)
 else
   METHODS=("$(map_method "$METHOD")")
 fi
+
+# Resolve a Schrodinger tool path, preferring "<name>.exe" on Windows if the bare name doesn't exist.
+schrodinger_tool() {
+  local name="$1"
+  if [ -e "$SCHRODINGER/$name" ]; then echo "$SCHRODINGER/$name"
+  elif [ -e "$SCHRODINGER/$name.exe" ]; then echo "$SCHRODINGER/$name.exe"
+  else echo "$SCHRODINGER/$name"
+  fi
+}
 
 # ---- device / scorer sanity -------------------------------------------------
 if [ "$GPU" = "1" ]; then DEVICE=cuda; else DEVICE=cpu; fi
 if [ -z "$SCORER_CMD" ] && [ "$SCORER" = "glide" ] && [ "$STATUS_ONLY" != "1" ]; then
   : "${SCHRODINGER:?SCHRODINGER is not set. Point it at your Schrodinger install for Glide, or use --scorer mock.}"
-  [ -x "$SCHRODINGER/glide" ] || { echo "error: \$SCHRODINGER/glide not found ($SCHRODINGER/glide)" >&2; exit 1; }
+  GLIDE_BIN="$(schrodinger_tool glide)"
+  # -e not -x: the executable bit is unreliable on Windows-mounted filesystems.
+  [ -e "$GLIDE_BIN" ] || { echo "error: Schrodinger glide not found at $SCHRODINGER/glide (or glide.exe)" >&2; exit 1; }
 fi
 
 # =============================================================================
@@ -139,7 +160,7 @@ field() { nav status --run-dir "$1" --field "$2" 2>/dev/null || true; }
 # using only the standard library. Writes to $1.
 render_config() {
   local out="$1" strategy="$2"
-  python3 - "$BASE_CFG" "$out" "$strategy" "$BUDGET_N" "$BATCH" "$POOL" "$DEVICE" "$DATABASE" <<'PY'
+  "$PYTHON_BIN" - "$BASE_CFG" "$out" "$strategy" "$BUDGET_N" "$BATCH" "$POOL" "$DEVICE" "$DATABASE" <<'PY'
 import json, sys
 base, out, strategy, budget, batch, pool, device, database = sys.argv[1:9]
 cfg = json.load(open(base))
@@ -176,12 +197,12 @@ dock_batch() {
       --proposals "$REPO/$prop_csv" --out "$scores_abs" --target "$TARGET" \
       "${extra[@]}" >>"$LOG" 2>&1
   elif [ "$SCORER" = "glide" ]; then
-    "$SCHRODINGER/run" python3 "$REPO/examples/scoring/glide_batch.py" \
+    "$(schrodinger_tool run)" python3 "$REPO/examples/scoring/glide_batch.py" \
       --proposals "$REPO/$prop_csv" --out "$scores_abs" \
       --docking-settings "$REPO/examples/docking/docking_settings.json" --target "$TARGET" \
       "${extra[@]}" >>"$LOG" 2>&1
   else
-    python3 "$REPO/examples/scoring/mock_score.py" \
+    "$PYTHON_BIN" "$REPO/examples/scoring/mock_score.py" \
       --proposals "$REPO/$prop_csv" --out "$scores_abs" >>"$LOG" 2>&1
   fi
   echo "$scores_rel"

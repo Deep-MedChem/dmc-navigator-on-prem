@@ -31,6 +31,26 @@ examples/run_navigator.sh TGFR1                        # gamma, 100k budget, 10 
    No Schrödinger? Use `--scorer mock` to watch the loop turn (a stand-in score,
    not chemistry).
 
+## Windows
+
+Run this script from **Git Bash** (see the top-level README's "Running on Windows" section for
+setup), not WSL2 — Git Bash is a native Windows process and can call your Schrodinger install
+(`glide.exe`/`ligprep.exe`) directly; WSL2 is a separate Linux VM and risks path/extension mismatches
+when calling native Windows executables across that boundary.
+
+```bash
+export SCHRODINGER="/c/Program Files/Schrodinger2024-3"   # your install, Git Bash path form
+examples/run_navigator.sh TGFR1
+```
+
+`navigator`/Docker commands themselves work fine from either Git Bash or WSL2 (Docker Desktop exposes
+`docker`/`docker compose` to both) — it's specifically the Glide-calling step inside `run_navigator.sh`
+that needs to run as a native Windows process.
+
+Windows executable naming (`glide.exe`/`ligprep.exe` vs. the extensionless Linux/Mac launchers) and the
+`python3` vs. `python` naming difference are both already handled automatically by the script — no
+action needed for either.
+
 ## The one command
 
 ```
@@ -72,9 +92,43 @@ refits — for `--iters` rounds. State lives in `runs/<target>_<method>_<budget>
 - **Compiled logs.** Progress prints one clean line per phase and is appended to
   `runs/<run>/pipeline.log`; the optimizer prints single-line errors by design.
   Set `DMC_NAV_DEBUG=1` in `.env` only when you need full tracebacks.
-- **Property filter.** The config's `space.property_constraints` is the
-  additive (generation-time) drug-like prefilter — approximate by design.
-  Reactive-group / exact-structure exclusions are left to your scoring step.
+- **Property filter (0.3.0).** Two layers, both configured here. The config's
+  `space.property_constraints` is the additive, generation-time drug-like
+  prefilter — approximate by design, it only biases what gets built. The
+  authority is `space.exact_filter_profile` (`"druglike-v1"` in these configs):
+  every assembled molecule is re-checked against the full property window **and**
+  the reactive-group / structural-alert exclusions before the proposal file is
+  written, whichever internal operator produced it. So nothing out-of-window or
+  alerting reaches your docking step, and rejects cost you no budget. Earlier
+  versions of this note said the exact exclusions were left to your scoring step;
+  that was true before 0.3.0 and is not any more.
+
+## A random baseline to compare against (0.3.0)
+
+A campaign's numbers only mean something next to a baseline. `navigator random`
+draws molecules from the same space with no optimization at all, so you can dock
+a random set through the identical Glide setup and see what the search actually
+bought you:
+
+```bash
+# 10k random drug-like molecules from the same space the KIF11 config screens
+navigator random 10000 --mode pw \
+  --database freedom-space-5@2026-03-296b.2 \
+  --filter-profile druglike-v1 \
+  --output runs/random_baseline.csv --seed 0
+```
+
+Use `--mode pw` for a baseline: it makes every *molecule* in the space equally
+likely, which is the honest "what would picking at random have given me" control.
+`--mode rw` makes every *reaction* equally likely instead — better when you want
+scaffold breadth rather than a fair baseline. Add `--filter-profile druglike-v1`
+so the baseline is drawn from the same filtered chemistry your run proposes from;
+without it you are comparing against the raw space and the comparison flatters
+the optimizer.
+
+The output is an `id,smiles` CSV. `scoring/glide_batch.py` expects the proposal
+schema rather than this one, so add the `batch_id`/`status` columns (or dock the
+SMILES directly with your own Glide call) before feeding it through.
 
 ## Bring your own target
 

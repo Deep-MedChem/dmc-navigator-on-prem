@@ -25,6 +25,7 @@
     "assembly_backend": "synthon_assembler",
     "sampling_regime": "product_weighted",
     "additive_margin_policy": "max",
+    "exact_filter_profile": "druglike-v1",
     "property_constraints": {
       "MolWt": {
         "max": 500.0
@@ -59,7 +60,7 @@
     "diversity": 0.1
   },
   "metadata": {
-    "note": "KIF11 kinesin screen over Freedom Space 5 with Glide docking. property_constraints is the additive (generation-time) prefilter matching the internal SpaceHASTEN drug-like filter (MolWt<=500, cLogP in [-10,5], HBA<=10, HBD<=5, RotB<=10, FractionCsp3 in [0.10,0.80], TPSA<=140, aromatic rings in [1,5]); it is approximate and identical across KIF11/PYRD/TGFR1. Exact-structure exclusions used internally (fluorine<=1, amide<=2, and reactive-group SMARTS: nitro/aldehyde/acyl-chloride/thiol/enone/vinyl-sulfone/acrylonitrile/nitro-alkene/N-oxide) are NOT additive and are left to your scoring/curation step. hit_threshold -8.7 is the internal GlideScore hit cutoff (minimize) for KIF11; it is reporting-only (drives the 'hits' count and analog_harvest readiness) and does not steer the search. Thresholds were calibrated on Glide HTVS/OPLS_2005; Epik-ON scores sit ~2 kcal less negative, so treat it as a relative marker on your own grid. budget/batch_size are overridden by examples/run_navigator.sh (default 100k over 10 iterations).",
+    "note": "KIF11 kinesin screen over Freedom Space 5 with Glide docking. property_constraints is the additive (generation-time) prefilter matching the internal SpaceHASTEN drug-like filter (MolWt<=500, cLogP in [-10,5], HBA<=10, HBD<=5, RotB<=10, FractionCsp3 in [0.10,0.80], TPSA<=140, aromatic rings in [1,5]); it is approximate and identical across KIF11/PYRD/TGFR1. These exact-structure exclusions (fluorine<=1, amide<=2, and reactive-group SMARTS: nitro/aldehyde/acyl-chloride/thiol/enone/vinyl-sulfone/acrylonitrile/nitro-alkene/N-oxide) plus the full window above are now enforced EXACTLY by the product's exact_filter_profile='druglike-v1' post-assembly gate, which re-checks every assembled molecule before it is written for docking (0.3.0). hit_threshold -8.7 is the internal GlideScore hit cutoff (minimize) for KIF11; it is reporting-only (drives the 'hits' count and analog_harvest readiness) and does not steer the search. Thresholds were calibrated on Glide HTVS/OPLS_2005; Epik-ON scores sit ~2 kcal less negative, so treat it as a relative marker on your own grid. budget/batch_size are overridden by examples/run_navigator.sh (default 100k over 10 iterations).",
     "docking_settings": "../docking/docking_settings.json"
   }
 }

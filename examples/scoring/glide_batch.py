@@ -104,6 +104,17 @@ def _pick_score_column(docked: pd.DataFrame, preferred: str) -> str:
     )
 
 
+def schrodinger_tool(schrodinger: str, name: str) -> Path:
+    """Resolve a Schrodinger tool path, preferring "<name>.exe" on Windows if the bare name doesn't exist."""
+    bare = Path(schrodinger) / name
+    if bare.exists():
+        return bare
+    exe = bare.with_suffix(".exe")
+    if exe.exists():
+        return exe
+    return bare  # neither exists — let the caller's own error handling surface this clearly
+
+
 def write_ligand_input(frame: pd.DataFrame, path: Path) -> None:
     """Write an SMILES file titled by product_id (stable ligand ids for Glide)."""
     with path.open("w") as handle:
@@ -120,7 +131,7 @@ def run_ligprep(*, ligands: Path, workdir: Path, ph: float, epik: bool, schrodin
     "<product_id>-1", "<product_id>-2", etc. — see fold_epik_states() for how
     those get collapsed back to the original product_id when scoring.
     """
-    ligprep = Path(schrodinger) / "ligprep"
+    ligprep = schrodinger_tool(schrodinger, "ligprep")
     prepped = workdir / "ligands_prepped.maegz"
     prepped.unlink(missing_ok=True)
     # Flags mirror the validated internal protocol (dmc_docking.glide): one
@@ -187,7 +198,7 @@ def run_glide(
     shift every score. POSE_OUTTYPE poseviewer + POSES_PER_LIG match the
     validated internal protocol (dmc_docking.glide).
     """
-    glide = Path(schrodinger) / "glide"
+    glide = schrodinger_tool(schrodinger, "glide")
     infile = workdir / "glide.in"
     infile.write_text(
         "\n".join(
@@ -269,7 +280,7 @@ def main(argv: list[str] | None = None) -> None:
     ]
 
     if not todo.empty:
-        if not schrodinger or not (Path(schrodinger) / "glide").exists():
+        if not schrodinger or not schrodinger_tool(schrodinger, "glide").exists():
             # No Schrodinger install available: emit explicit failures rather than
             # inventing scores. The customer runs this in their licensed env.
             for _, row in todo.iterrows():
