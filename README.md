@@ -238,6 +238,53 @@ navigator data install freedom-space-5 --source /mnt/usb/dmc-navigator-databases
 
 Remove a release you no longer need with `navigator data remove <db@release>`.
 
+### Available databases
+
+`navigator data catalog` is always the authoritative list — it reflects what
+*your* licence is entitled to. The table below maps each curated space to the
+name you pass on the command line, the release you download from AWS, and the
+equivalent BioSolveIT `.space` file, so you can line our spaces up against an
+existing SpaceHASTEN/infiniSee setup.
+
+The **CLI name** column is what you pass to both `navigator data install` and
+`--database`. `data install` accepts the bare id (resolving to the latest
+release); `init` and `random` need the fully-qualified `id@release`.
+
+| Space | CLI name (`id@release`) | AWS release object prefix | BioSolveIT `.space` equivalent | Reactions | Synthons | Products |
+|---|---|---|---|---:|---:|---:|
+| Enamine REAL v5a | `enamine-real-v5a@2026-07-02.1` | `releases/enamine-real-v5a/2026-07-02.1/` | `REALSpace_95bn_2026-04.space` ¹ | 398 | 2,119,892 | 357.4 B ¹ |
+| Freedom Space 5 | `freedom-space-5@2026-03-296b.2` | `releases/freedom-space-5/2026-03-296b.2/` | `FreedomSpace_296bn_2026-03.space` | 123 | 1,822,466 | 296.4 B |
+| Synple eXplore | `synple-explore-2025-10@2025-10.2` | `releases/synple-explore-2025-10/2025-10.2/` | `eXplore_8tr_2026-06.space` ² | 28 | 1,857,059 | 9.53 T |
+| Synple | `synple-synple-2025-10@2025-10.2` | `releases/synple-synple-2025-10/2025-10.2/` | `Synple_8tr_2026-06.space` ² | 49 | 1,227,380 | 7.61 T |
+| VAST 2026 H1 | `vast-2026-h1@2026-h1.2` | `releases/vast-2026-h1/2026-h1.2/` | `VAST_4bn_2026-05.space` | 6 | 51,009 | 5.52 B |
+| XtalPi VAST (legacy) | `xtalpi-vast-legacy@3p9b.2` | `releases/xtalpi-vast-legacy/3p9b.2/` | superseded by `VAST_4bn_2026-05.space` | 6 | 51,572 | 8.83 B |
+| ChemInfinita 2026-02 | `cheminfinita-2026-02@2026-02.1` | `releases/cheminfinita-2026-02/2026-02.1/` | — no BioSolveIT space | 34 | 204,095 | 794.2 B |
+| D2B SpaceM1 | `d2b-spacem1@2025-09-24.2` | `releases/d2b-spacem1/2025-09-24.2/` | — no BioSolveIT space | 2 | 99,573 | 1.49 B |
+
+All prefixes are relative to the public release bucket
+`s3://dmc-navigator-databases-815935788477/` (`us-east-1`); every object under
+them is ciphertext, which is why the bucket can be public. Product counts are
+the raw combinatorial product of the synthon positions, *before* any
+drug-likeness filtering — the same convention BioSolveIT's file names use, so
+the numbers are directly comparable.
+
+¹ **Enamine REAL is our own reconstruction, not the BioSolveIT file.** We rebuild
+the v5a reaction subset from Enamine's published synthons; it targets the same
+chemistry as `REALSpace_95bn_2026-04.space` but is not byte-equivalent to it, and
+its raw product count (357 B) is larger than the vendor's headline 95 B because
+BioSolveIT quotes a property-filtered count. Expect comparable but not identical
+enumerations.
+
+² Ours is the **2025-10** Synple/eMolecules drop; BioSolveIT's current files are
+the 2026-06 vintage. Same spaces, one drop behind — the reaction and synthon
+counts will differ slightly from a 2026-06 `.space`.
+
+**Not available yet.** These BioSolveIT spaces have no Navigator equivalent
+today: `AuriVerse_5bn_2026-06`, `GalaXi_26bn_2025-09`, `AMBrosia_125bn_2025-07`,
+`CHEMriya_55bn_2025-10`, `SAVISpace_7bn_2025-08`, `KnowledgeSpace_262tr_2025-07`.
+If you need one of them, ask — the ingestion pipeline is generic and adding a
+space is a data job, not a code change.
+
 ## 5. Run the workflow
 
 **Fastest path — the worked examples.** `examples/run_navigator.sh` drives the
@@ -324,6 +371,51 @@ proposal and warn if a campaign narrows to one or two chemotype families.
 > with a message naming its replacement — it never silently switches algorithm.
 
 ---
+
+## Random sampling (`navigator random`)
+
+Sometimes you want an unbiased random draw from a space rather than an optimized
+one — a reference or baseline set to compare a campaign against, a negative
+control, a coverage probe, or just a look at what a space actually contains.
+`navigator random` does that directly, with no run directory, no target and no
+optimizer loop:
+
+```bash
+navigator random 10000 --mode rw \
+  --database freedom-space-5@2026-03-296b.2 \
+  --output sample_10K.csv --seed 0
+```
+
+The output is a CSV with two columns, `id` and `smiles`. The `id` is the same
+stable product identifier the optimizer uses, so a sample can be joined against
+run archives and proposal files.
+
+### Which mode?
+
+`--mode` is required, because the two choices answer different questions and
+there is no safe default:
+
+| Mode | Meaning | Use it when |
+|---|---|---|
+| `pw` — product-weighted | Each **enumerable product** is equally likely. A reaction is drawn with probability proportional to its combinatorial size, then synthons uniformly within it. | You want a genuinely uniform sample *of the space's molecules* — the correct baseline for "what does this space look like". Large reactions dominate, in proportion to how much of the space they actually are. |
+| `rw` — reaction-weighted | Each **reaction** is equally likely; a reaction is picked uniformly, then synthons uniformly within it. | You want scaffold/reaction diversity — small reactions get a fair share they would never receive under `pw`. Better for coverage probes and chemotype breadth. |
+
+On a space with uneven reaction sizes the two produce visibly different
+reaction-size distributions. That is the point; pick deliberately.
+
+### Options
+
+| Flag | Effect |
+|---|---|
+| `<N>` (positional) | How many **distinct** molecules to draw. Duplicates are removed, so you get N distinct or a clear `space_saturated` report if the space cannot supply them. |
+| `--mode {pw,rw}` | Required. See above. |
+| `--database <id@release>` | Which installed space to sample (see [Available databases](#available-databases)). |
+| `--output <path>` | CSV to write. Rows stream out as they are drawn, so a large N does not have to fit in memory. |
+| `--seed <int>` | Reproducible draws — the same seed, mode and database give byte-identical output. |
+| `--filter-profile druglike-v1` | Optional. Applies the same exact drug-likeness / structural-alert gate the optimizer uses, so the sample is drawn from the filtered space rather than the raw one. Off by default: without it, the draw is over the **raw** space and the mode's statistical meaning is exactly as described above. |
+
+Sampling uses the fast uniform draw, not the optimizer's constraint-aware
+rejection sampler, so even large N stays quick.
 
 ## Command reference
 

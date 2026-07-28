@@ -32,9 +32,19 @@ Workflow (forwarded to the licensed CLI; require a valid license):
   navigator propose        --run-dir runs/<name>
   navigator ingest         --run-dir runs/<name> --scores <scores.csv>
   navigator update-params  --run-dir runs/<name> [--budget N ...]
-  navigator transition     --run-dir runs/<name> --to analog_harvest
+  navigator transition     --run-dir runs/<name> --to analog_harvest_accurate
   navigator status         --run-dir runs/<name>
   navigator <cmd> --help              Show options for any workflow command
+
+Sampling (forwarded to the licensed CLI; requires a valid license):
+  navigator random <N> --mode pw|rw --database <db@rel> --output <csv> [--seed N]
+                                      Draw N distinct random molecules from a
+                                      space to an id,smiles CSV. pw = each
+                                      product equally likely (uniform over the
+                                      space); rw = each reaction equally likely
+                                      (favours scaffold diversity). Add
+                                      --filter-profile druglike-v1 to sample the
+                                      drug-like subset.
 
 Info (no license required):
   navigator roster                    List the available strategy presets
@@ -68,8 +78,8 @@ case "$cmd" in
                   fi
                   require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator data "$@" ;;
-  # Workflow commands and everything else → the in-container licensed CLI.
-  init|propose|ingest|update-params|transition|status|roster|self-test|*)
+  # Workflow/sampling commands and everything else → the in-container licensed CLI.
+  init|propose|ingest|update-params|transition|status|random|roster|self-test|*)
                   require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator "$cmd" "$@" ;;
 esac
