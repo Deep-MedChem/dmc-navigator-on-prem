@@ -130,6 +130,74 @@ The output is an `id,smiles` CSV. `scoring/glide_batch.py` expects the proposal
 schema rather than this one, so add the `batch_id`/`status` columns (or dock the
 SMILES directly with your own Glide call) before feeding it through.
 
+## Warm-starting a campaign with molecules you already scored
+
+`navigator warm-start` hands a fresh run a set of scored molecules so its first
+`propose` is already informed, and `navigator enrich` does the same for a run
+that is already under way. Full explanation of the two modes and the budget rule
+is in the top-level README; here is how the pieces in this directory fit together.
+
+**Where the seed molecules come from matters.** If they carry ids from the
+database the run is screening, Navigator can rebuild their structures and they
+become full members of the run — proper starting points for analogue growth, with
+their building blocks steering the search. If they are only structures, they can
+warm-train the ranking model and nothing more. Export the ids where you have them.
+
+### Building a seed set from scratch with your own Glide
+
+```bash
+DB=freedom-space-5@2026-03-296b.2
+
+# 1. Draw a seed pool from the same space (and same filter) the run screens.
+navigator random 5000 --mode pw --database "$DB" \
+  --filter-profile druglike-v1 --output inputs/seed_pool.csv --seed 0
+
+# 2. glide_batch.py expects a `product_id` column; `random` writes `id`. Rename it.
+#    (These ARE the space's ids, which is what makes the warm start full-strength.)
+sed '1s/^id,/product_id,/' inputs/seed_pool.csv > inputs/seed_proposals.csv
+
+# 3. Dock the seed pool with the same Glide setup the campaign uses.
+"$SCHRODINGER/run" python3 examples/scoring/glide_batch.py \
+  --proposals inputs/seed_proposals.csv --out inputs/seed_scores.csv \
+  --docking-settings examples/docking/docking_settings.json --target TGFR1
+
+# 4. Check it before committing to it, then seed the run.
+navigator init       --run-dir runs/tgfr1_warm --config-json inputs/TGFR1.json --overwrite
+navigator warm-start --run-dir runs/tgfr1_warm --scores inputs/seed_scores.csv --dry-run
+navigator warm-start --run-dir runs/tgfr1_warm --scores inputs/seed_scores.csv \
+  --label "random-pw-5k-seed"
+
+navigator status --run-dir runs/tgfr1_warm   # submitted: 5000 of your budget
+```
+
+`glide_batch.py` writes `batch_id,product_id,status,score,…`, which is exactly the
+schema `warm-start` reads — including `status`, so seeds Glide could not pose are
+counted without becoming misleading training labels, the same as in a normal round.
+
+Note step 4's effect on the budget: those 5,000 docks are **charged**, so the run
+proposes 5,000 fewer molecules of its own. That is deliberate — it keeps a
+warm-started run and a cold run comparable at equal oracle cost. Pass `--free` if
+you want the full budget on top of the seeds instead.
+
+### Pausing a campaign to add your own molecules
+
+`run_navigator.sh` runs to completion, so drive the loop manually (top-level
+README, "Manual loop") when you want to break in partway:
+
+```bash
+# ... after three propose/dock/ingest rounds on runs/tgfr1 ...
+navigator status --run-dir runs/tgfr1          # pending_batch_id must be null
+
+# Dock your own picks however you like, then hand them over.
+navigator enrich --run-dir runs/tgfr1 --scores inputs/my_round3_picks.csv \
+  --label "medchem-picks-round3"
+navigator propose --run-dir runs/tgfr1         # next batch sees them
+```
+
+`enrich` refuses while a batch is awaiting scores — ingest that batch first. New
+evidence is tagged as available from the round about to be proposed, never
+backdated, so the run's history stays an honest record of what was known when.
+
 ## Bring your own target
 
 Copy a config, point `space.database` at your installed release (or your own
