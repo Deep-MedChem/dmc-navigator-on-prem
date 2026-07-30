@@ -3,6 +3,45 @@
 Image releases published to `on-prem/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
+## 0.4.0 — 2026-07-30
+
+Run `navigator update` to pick this up.
+
+**Warm start and mid-run enrichment**
+- New `navigator warm-start --run-dir <run> --scores <csv>` seeds a **fresh** run
+  with molecules you scored elsewhere (an old campaign, an HTS deck, a supplied
+  seed set), so its first `propose` is already informed instead of drawing at
+  random.
+- New `navigator enrich --run-dir <run> --scores <csv>` does the same for a run
+  already under way: pause between rounds, dock some molecules your own way, hand
+  them over, carry on. It refuses while a batch is awaiting scores.
+- **Two modes.** `--mode synthon` (recommended) takes rows carrying ids from the
+  database you are screening — a Navigator `product_id`, or `reaction_id` +
+  `synthon_ids`. Navigator rebuilds the structures from the ids itself, so those
+  molecules become full members of the run: they train the ranking model, act as
+  starting points for analogue growth, steer the search through their building
+  blocks, and are never re-docked at your expense. `--mode smiles` takes bare
+  structures; they can only warm-train the ranking model, and the next `propose`
+  still draws its own fresh batch. `--mode auto` (default) picks per file.
+- **Budget.** These molecules are **charged** to the run's `budget.submitted` by
+  default — 1,000 seeds means 1,000 fewer proposals, so a warm-started run and a
+  cold run cost the same number of docks. `--free` opts out.
+- `--dry-run` validates a file and reports what would happen without writing
+  anything. Ingesting the same file twice is refused, and a molecule the run
+  already knows is skipped, so nothing is ever double-charged.
+- If ids do not resolve, the error names the reason per row — almost always a
+  file exported against a different database or release. `--allow-unmatched`
+  demotes just those rows to the structures-only path instead of failing the file.
+- **You are warned when you lose the id path.** Ending up in structures-only mode
+  produces no error — the ingest succeeds and the ranking model is trained while
+  the molecules never enter the space — so Navigator prints a warning naming the
+  cause and the cost. The usual cause is a file keyed by vendor catalog ids
+  (`PV-…`, `Z…`) instead of the ids of the synthons being screened; the warning
+  quotes the offending values and says what a Navigator id looks like.
+- `navigator status` now reports `observations` and `external_observations`
+  alongside `submitted`; `submitted` keeps its existing budget-facing meaning, so
+  a run with no external evidence reports exactly the same numbers as before.
+
 ## 0.3.0 — 2026-07-28
 
 The correctness and productization release. Two strategy renames are **breaking**;
