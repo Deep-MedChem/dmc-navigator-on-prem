@@ -3,9 +3,9 @@
 Image releases published to `on-prem/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
-## Unreleased
+## 0.4.0 — 2026-07-30
 
-Not in a published image yet — these land in the next release.
+Run `navigator update` to pick this up.
 
 **Warm start and mid-run enrichment**
 - New `navigator warm-start --run-dir <run> --scores <csv>` seeds a **fresh** run
