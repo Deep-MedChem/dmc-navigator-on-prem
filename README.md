@@ -342,6 +342,69 @@ shows how to copy and adapt that example.
 Append `--help` to any workflow command for its options
 (`navigator status --help`).
 
+## Warm start & enrichment (`navigator warm-start` / `navigator enrich`)
+
+If you already have scored molecules — an old campaign against the same target, an
+HTS deck, a set you docked yourself while a run was paused — you can hand them to
+Navigator instead of letting it start cold or ignore them.
+
+```bash
+# Seed a fresh run before its first propose. Dry-run a big file first: this
+# validates and reports, and writes nothing.
+navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv --dry-run
+navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv
+
+# Pause after round 3, dock some molecules your own way, hand them over, continue.
+navigator enrich  --run-dir runs/hk --scores inputs/side_docking.csv
+navigator propose --run-dir runs/hk
+```
+
+Put the file under `./inputs` (or `./runs`) — those are the directories the
+container can see.
+
+### Two modes, and the difference is worth understanding
+
+**`--mode synthon` — recommended.** Your rows carry identifiers that exist in the
+database Navigator is screening: a Navigator `product_id` (the `reaction____synthon____synthon`
+form written by `navigator random`, by every `proposals.csv`, and by `history.csv`),
+or separate `reaction_id` and `synthon_ids` columns. Navigator looks the ids up and
+**rebuilds the structure itself**, so those molecules become full members of the
+run. They train the ranking model, they count as good starting points to grow
+analogues from, their building blocks steer where the search goes next, and
+Navigator will never spend budget re-docking one of them.
+
+**`--mode smiles`.** Your rows carry only structures. Navigator cannot place them
+in the space, so they can only warm-train the ranking model — they are not starting
+points, their building blocks are unknown, and the next `propose` still draws its
+own fresh batch. Useful, but materially weaker than the id path. If your molecules
+came from a Navigator-supported database, export the ids.
+
+**`--mode auto` (default)** decides per file.
+
+### Budget
+
+These molecules are **charged** to the run's `budget.submitted` by default: 1,000
+seeds means 1,000 fewer molecules Navigator will propose. That is the honest
+default — you are not getting free oracle calls. Pass `--free` if you already paid
+for the docking separately and want the full budget still available.
+
+`navigator status` reports `submitted` (what counts against the budget) alongside
+`observations` and `external_observations` so the two never blur.
+
+### Useful flags
+
+| Flag | Effect |
+|---|---|
+| `--dry-run` | Validate and report; write nothing. Run this first on a large file. |
+| `--free` | Do not charge these molecules to the run's budget. |
+| `--score-column NAME` | Your score column isn't called `score`. |
+| `--label TEXT` | Provenance note recorded with the ingestion. |
+| `--allow-unmatched` | Some ids don't resolve: treat just those as structures-only instead of failing the whole file. |
+| `--mode synthon\|smiles\|auto` | Override the automatic choice. |
+
+If ids do not resolve, the error names the reason — that almost always means the
+file was exported against a **different database or release** than the run is using.
+
 ## Choosing a strategy
 
 The optimizer ships four strategies, selected by the `strategy` field in your
@@ -433,6 +496,8 @@ rejection sampler, so even large N stays quick.
 | `navigator data verify <db@rel>` | Re-verify an installed release offline (signature + hashes) |
 | `navigator data remove <db@rel>` | Delete an installed release from `./databases` |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
+| `navigator warm-start --run-dir <run> --scores <csv>` | Seed a fresh run with molecules you scored elsewhere, before its first `propose` |
+| `navigator enrich --run-dir <run> --scores <csv>` | Add externally scored molecules to a run already under way (between rounds) |
 | `navigator random <N> --mode pw\|rw --output <csv> --database <db>` | Random-sample N molecules from a space to an `id,smiles` CSV (pw = product-weighted, rw = reaction-weighted); optional `--filter-profile druglike-v1`, `--seed` |
 | `navigator transition --to <preset>` | Switch strategy, keeping the archive and budget |
 | `navigator roster` | List the public strategy presets (no license required) |

@@ -36,6 +36,28 @@ Workflow (forwarded to the licensed CLI; require a valid license):
   navigator status         --run-dir runs/<name>
   navigator <cmd> --help              Show options for any workflow command
 
+Warm start / enrichment (molecules you scored outside the propose-ingest loop):
+  navigator warm-start --run-dir runs/<name> --scores inputs/seeds.csv [--dry-run]
+                                      Seed a FRESH run before its first propose.
+  navigator enrich     --run-dir runs/<name> --scores inputs/extra.csv
+                                      Add evidence to a run already under way
+                                      (between rounds; not mid-batch).
+                                      --mode synthon  RECOMMENDED. Rows carry ids
+                                        from the database being screened (a
+                                        Navigator product_id, or reaction_id +
+                                        synthon_ids). Navigator rebuilds the
+                                        structures itself, so the molecules become
+                                        full members of the run and are never
+                                        re-docked at your expense.
+                                      --mode smiles   Structures only. Warm-trains
+                                        the ranking model; the next propose still
+                                        draws its own fresh batch.
+                                      --mode auto (default) picks per file.
+                                      These molecules are CHARGED to the run's
+                                      budget by default; pass --free if you do not
+                                      want them to consume it.
+                                      Always --dry-run a large file first.
+
 Sampling (forwarded to the licensed CLI; requires a valid license):
   navigator random <N> --mode pw|rw --database <db@rel> --output <csv> [--seed N]
                                       Draw N distinct random molecules from a
@@ -79,7 +101,7 @@ case "$cmd" in
                   require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator data "$@" ;;
   # Workflow/sampling commands and everything else → the in-container licensed CLI.
-  init|propose|ingest|update-params|transition|status|random|roster|self-test|*)
+  init|propose|ingest|warm-start|enrich|update-params|transition|status|random|roster|self-test|*)
                   require_image || exit 1
                   exec $COMPOSE_CMD run --rm navigator "$cmd" "$@" ;;
 esac
