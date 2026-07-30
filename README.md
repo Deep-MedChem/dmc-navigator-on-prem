@@ -405,6 +405,29 @@ for the docking separately and want the full budget still available.
 If ids do not resolve, the error names the reason — that almost always means the
 file was exported against a **different database or release** than the run is using.
 
+### You will be told if you lose the id path
+
+Ending up in structures-only mode is easy to do by accident and produces no error:
+the ingest succeeds, the ranking model is trained, and the summary looks fine —
+while the molecules never enter the space. So Navigator warns you when it happens,
+naming the cause and what it cost:
+
+```
+$ navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv --dry-run
+warning: the 'id' column does not hold Navigator product ids, so all 5000 row(s)
+took the smiles-only path — they train the ranking surrogate, but they are NOT
+placed in the combinatorial space: they never become elites, cannot be
+synthon-swapped, do not seed the reaction/synthon distributions, and are not marked
+as seen — so the next propose still draws its own pool and may re-dock them at your
+expense. Values seen: 'PV-002637465035', 'Z1234567890'. ...
+```
+
+The most common cause is exactly that: a file keyed by **vendor catalog ids**
+(`PV-…`, `Z…`) rather than by the ids of the synthons the run screens. Those cannot
+be resolved. Re-export with the database's own ids and the same file becomes
+full-strength evidence. You get the same warnings from `--dry-run`, so check before
+committing to a large file.
+
 ## Choosing a strategy
 
 The optimizer ships four strategies, selected by the `strategy` field in your

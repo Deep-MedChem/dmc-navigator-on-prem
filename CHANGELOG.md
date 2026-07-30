@@ -32,6 +32,12 @@ Not in a published image yet — these land in the next release.
 - If ids do not resolve, the error names the reason per row — almost always a
   file exported against a different database or release. `--allow-unmatched`
   demotes just those rows to the structures-only path instead of failing the file.
+- **You are warned when you lose the id path.** Ending up in structures-only mode
+  produces no error — the ingest succeeds and the ranking model is trained while
+  the molecules never enter the space — so Navigator prints a warning naming the
+  cause and the cost. The usual cause is a file keyed by vendor catalog ids
+  (`PV-…`, `Z…`) instead of the ids of the synthons being screened; the warning
+  quotes the offending values and says what a Navigator id looks like.
 - `navigator status` now reports `observations` and `external_observations`
   alongside `submitted`; `submitted` keeps its existing budget-facing meaning, so
   a run with no external evidence reports exactly the same numbers as before.
