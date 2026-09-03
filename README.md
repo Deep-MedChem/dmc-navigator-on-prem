@@ -256,8 +256,7 @@ release); `init` and `random` need the fully-qualified `id@release`.
 | Freedom Space 5 | `freedom-space-5@2026-03-296b.2` | `releases/freedom-space-5/2026-03-296b.2/` | `FreedomSpace_296bn_2026-03.space` | 123 | 1,822,466 | 296.4 B |
 | Synple eXplore | `synple-explore-2025-10@2025-10.2` | `releases/synple-explore-2025-10/2025-10.2/` | `eXplore_8tr_2026-06.space` ² | 28 | 1,857,059 | 9.53 T |
 | Synple | `synple-synple-2025-10@2025-10.2` | `releases/synple-synple-2025-10/2025-10.2/` | `Synple_8tr_2026-06.space` ² | 49 | 1,227,380 | 7.61 T |
-| VAST 2026 H1 | `vast-2026-h1@2026-h1.2` | `releases/vast-2026-h1/2026-h1.2/` | `VAST_4bn_2026-05.space` | 6 | 51,009 | 5.52 B |
-| XtalPi VAST (legacy) | `xtalpi-vast-legacy@3p9b.2` | `releases/xtalpi-vast-legacy/3p9b.2/` | superseded by `VAST_4bn_2026-05.space` | 6 | 51,572 | 8.83 B |
+| VAST 2026 H2 | `vast-2026-h2@2026-h2.1` | `releases/vast-2026-h2/2026-h2.1/` | — native VAST H2 synthon release | 22 | 107,013 | 6.80 B |
 | ChemInfinita 2026-02 | `cheminfinita-2026-02@2026-02.1` | `releases/cheminfinita-2026-02/2026-02.1/` | — no BioSolveIT space | 34 | 204,095 | 794.2 B |
 | D2B SpaceM1 | `d2b-spacem1@2025-09-24.2` | `releases/d2b-spacem1/2025-09-24.2/` | — no BioSolveIT space | 2 | 99,573 | 1.49 B |
 
