@@ -3,6 +3,14 @@
 Image releases published to `on-prem/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
+## Unreleased — 2026-09-03
+
+**Database catalog**
+- VAST 2026 H2 (`vast-2026-h2@2026-h2.1`) replaces both VAST 2026 H1 and the
+  legacy XtalPi VAST entry in the signed public catalog.
+- The encrypted H2 bundle is sealed to every currently issued database-install
+  key and can be installed with `navigator data install vast-2026-h2`.
+
 ## 0.4.0 — 2026-07-30
 
 Run `navigator update` to pick this up.
