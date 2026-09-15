@@ -16,6 +16,7 @@ See [the custom seed guide](docs/CUSTOM_SEEDS.md) for upgrade and usage.
 - `--mode external` (alias `smiles`) trains from molecules with unknown
   decompositions. Compatibility failures point to this fallback.
 - Strict synthon imports reject assembly/structure failures before writing evidence.
+- Optional `.env` settings may be omitted without aborting `navigator login`.
 - The image now publishes at `on-prem/navigator/dmc-navigator`; update `DMC_NAV_IMAGE`
   in `.env` as described in the guide.
 

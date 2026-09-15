@@ -197,5 +197,5 @@ navigator self-test
 ```
 
 Expect version `0.5.0`. Use `stable` instead of `0.5.0` to follow future releases.
-The [release](https://github.com/Deep-MedChem/dmc-navigator-prod/releases/tag/on-prem-v0.5.0)
+The [release](https://github.com/Deep-MedChem/dmc-navigator-on-prem/releases/tag/v0.5.0)
 also records the immutable image digest.
