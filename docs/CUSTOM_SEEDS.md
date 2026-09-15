@@ -179,7 +179,14 @@ contains illustrative synthetic scores for testing the input format. Copy it int
 
 ### Upgrade from 0.4.0
 
-Update this checkout (`git pull --ff-only`). In `.env`, set:
+From your on-prem checkout, refresh the repository and installed wrapper scripts:
+
+```bash
+git pull --ff-only
+bash install_navigator.sh
+```
+
+The installer preserves an existing `.env` and license. In `.env`, set:
 
 ```dotenv
 DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
