@@ -1,0 +1,4 @@
+id,smiles,score
+prior-assay-001,CCOc1ccc(C(N)=O)cc1,-7.5
+prior-assay-002,CC(=O)Nc1ccccc1,-6.9
+prior-assay-003,CNc1ncccc1,-6.3

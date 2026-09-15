@@ -1,7 +1,23 @@
 # Changelog — DMC Navigator on-prem
 
-Image releases published to `on-prem/dmc-navigator` (pull the `stable` tag; run
+Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
+
+## 0.5.0 — 2026-09-15
+
+See [the custom seed guide](docs/CUSTOM_SEEDS.md) for upgrade and usage.
+
+- `navigator validate-seeds` checks IDs, synthon slots, assembly and supplied
+  structures before docking, with per-row reports and normalized exports.
+- `--id-map` maps known vendor/release IDs to the installed space and verifies
+  the mapped molecule against supplied SMILES.
+- `warm-start` / `enrich` reuse supplied scores without docking. Resolved product
+  IDs are excluded from subsequent proposals.
+- `--mode external` (alias `smiles`) trains from molecules with unknown
+  decompositions. Compatibility failures point to this fallback.
+- Strict synthon imports reject assembly/structure failures before writing evidence.
+- The image now publishes at `on-prem/navigator/dmc-navigator`; update `DMC_NAV_IMAGE`
+  in `.env` as described in the guide.
 
 ## Unreleased — 2026-09-03
 

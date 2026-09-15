@@ -31,7 +31,7 @@ make_fixture() {
   mkdir -p "$dir/bin" "$dir/home" "$dir/repo"
   : > "$dir/repo/docker-compose.yml"
   cat > "$dir/repo/.env" <<'EOF'
-DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/dmc-navigator
+DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
 DMC_NAV_IMAGE_TAG=stable
 DMC_NAV_RUNS_DIR=./runs
 DMC_NAV_INPUTS_DIR=./inputs

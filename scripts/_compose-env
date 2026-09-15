@@ -20,7 +20,7 @@ export COMPOSE_CMD="docker compose -p ${COMPOSE_PROJECT_NAME} --project-director
 # Opt-in GPU: if DMC_NAV_GPUS is set in .env (e.g. =all), layer the GPU override
 # so the container gets NVIDIA GPU access (needed for surrogate.device=cuda /
 # run_navigator.sh --gpu). Requires the NVIDIA Container Toolkit on the host.
-_gpu="$(grep -E '^DMC_NAV_GPUS=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+_gpu="$(grep -E '^DMC_NAV_GPUS=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 GPU_COMPOSE_FILE="${REPO_FOLDER}/docker-compose.gpu.yml"
 if [ -n "${_gpu:-}" ] && [ -f "$GPU_COMPOSE_FILE" ]; then
   export COMPOSE_CMD="${COMPOSE_CMD} -f ${GPU_COMPOSE_FILE}"
@@ -31,10 +31,10 @@ fi
 _ensure_dirs() {
   # Pull path values out of .env (fall back to the compose defaults).
   local runs inputs databases key_file
-  runs="$(grep -E '^DMC_NAV_RUNS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-  inputs="$(grep -E '^DMC_NAV_INPUTS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-  databases="$(grep -E '^DMC_NAV_DATABASES_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-  key_file="$(grep -E '^DMC_NAV_DB_INSTALL_KEY_FILE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+  runs="$(grep -E '^DMC_NAV_RUNS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+  inputs="$(grep -E '^DMC_NAV_INPUTS_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+  databases="$(grep -E '^DMC_NAV_DATABASES_DIR=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+  key_file="$(grep -E '^DMC_NAV_DB_INSTALL_KEY_FILE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
   runs="${runs:-./runs}"; inputs="${inputs:-./inputs}"; databases="${databases:-./databases}"
   key_file="${key_file:-./db_install.key}"
   case "$runs" in /*) : ;; *) runs="${REPO_FOLDER}/${runs#./}" ;; esac
@@ -48,8 +48,8 @@ _ensure_dirs() {
 _ensure_dirs
 
 # The image reference, for login/pull guidance and the require_image guard.
-DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
-DMC_NAV_IMAGE_TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2-)"
+DMC_NAV_IMAGE="$(grep -E '^DMC_NAV_IMAGE=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
+DMC_NAV_IMAGE_TAG="$(grep -E '^DMC_NAV_IMAGE_TAG=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 export DMC_NAV_IMAGE DMC_NAV_IMAGE_TAG
 export DMC_NAV_IMAGE_REF="${DMC_NAV_IMAGE:-}:${DMC_NAV_IMAGE_TAG:-stable}"
 
