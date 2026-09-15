@@ -36,7 +36,11 @@ Workflow (forwarded to the licensed CLI; require a valid license):
   navigator status         --run-dir runs/<name>
   navigator <cmd> --help              Show options for any workflow command
 
-Warm start / enrichment (molecules you scored outside the propose-ingest loop):
+Custom seeds / enrichment (molecules scored outside the propose-ingest loop):
+  navigator validate-seeds --run-dir runs/<name> --molecules inputs/seeds.csv
+                                      Check IDs and structures before docking.
+                                      --report inputs/compatibility.csv writes row diagnostics.
+                                      --id-map inputs/id_map.csv applies a verified crosswalk.
   navigator warm-start --run-dir runs/<name> --scores inputs/seeds.csv [--dry-run]
                                       Seed a FRESH run before its first propose.
   navigator enrich     --run-dir runs/<name> --scores inputs/extra.csv
@@ -49,7 +53,7 @@ Warm start / enrichment (molecules you scored outside the propose-ingest loop):
                                         structures itself, so the molecules become
                                         full members of the run and are never
                                         re-docked at your expense.
-                                      --mode smiles   Structures only. Warm-trains
+                                      --mode external Structures only (alias: smiles). Warm-trains
                                         the ranking model; the next propose still
                                         draws its own fresh batch.
                                       --mode auto (default) picks per file.

@@ -111,7 +111,7 @@ PATH.
 The checked-in configuration uses this exact shared image:
 
 ```text
-815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/dmc-navigator:stable
+815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator:stable
 ```
 
 Configure the source access key supplied by Deep-MedChem under any AWS profile
@@ -582,3 +582,8 @@ rejection sampler, so even large N stays quick.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
   in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
   Existing runs, inputs, and the installed license remain in place.
+
+## Custom seed molecules (0.5.0)
+
+See [Custom seeds](docs/CUSTOM_SEEDS.md) for upgrading, compatibility checks,
+ID mapping, already-docked scores and synthon-agnostic training examples.
