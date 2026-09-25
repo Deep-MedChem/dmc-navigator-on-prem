@@ -167,17 +167,17 @@ navigator warm-start --run-dir runs/tgfr1_warm --scores inputs/seed_scores.csv -
 navigator warm-start --run-dir runs/tgfr1_warm --scores inputs/seed_scores.csv \
   --label "random-pw-5k-seed"
 
-navigator status --run-dir runs/tgfr1_warm   # submitted: 5000 of your budget
+navigator status --run-dir runs/tgfr1_warm   # external_observations: 5000, submitted: 0
 ```
 
 `glide_batch.py` writes `batch_id,product_id,status,score,…`, which is exactly the
 schema `warm-start` reads — including `status`, so seeds Glide could not pose are
 counted without becoming misleading training labels, the same as in a normal round.
 
-Note step 4's effect on the budget: those 5,000 docks are **charged**, so the run
-proposes 5,000 fewer molecules of its own. That is deliberate — it keeps a
-warm-started run and a cold run comparable at equal oracle cost. Pass `--free` if
-you want the full budget on top of the seeds instead.
+Note step 4's effect on the budget: none. Since 0.5.1 those 5,000 docks are not
+charged, so the run still proposes its full budget of its own on top of the
+seeds. To compare a warm-started run with a cold run at equal oracle cost, pass
+`--charge-to-budget` and the seeds count against the budget instead.
 
 ### Pausing a campaign to add your own molecules
 

@@ -125,23 +125,37 @@ cheap way to find out which path a file will take before committing to it.
 
 ## Budget
 
-External molecules are **charged** to `budget.submitted` by default. A warm start
-is evidence somebody paid an oracle for, and exempting it silently turns any
-budget-matched comparison into a head start — the exact hazard the benchmark
-harness's fairness ledger (`dmc-navigator-orion`, `docs/04_FAIRNESS.md` §2 "The
-oracle budget") is written to prevent. `N` charged seeds buy `N` fewer proposals;
-a warm-started arm and a cold arm spend the same number of oracle calls.
+External molecules are **not charged** to `budget.submitted`. That budget bounds
+the docking *this run* performs; a molecule folded in here was docked somewhere
+else, before this run or beside it. Charging it spends the allowance on work the
+run did not do — and does so invisibly, since the campaign simply stops earlier
+and reports `complete`. `N` seeds used to buy `N` fewer proposals; they now buy
+none.
 
-Pass `--free` when that is not what you are measuring — a customer who already
-docked those molecules on their own time and simply wants Navigator to know about
-them. `status` reports both numbers so the two never blur:
+Pass **`--charge-to-budget`** when you *are* measuring a budget-matched
+comparison — a seeded arm against a cold one, where exempting the seed hands the
+seeded arm a head start, the hazard the benchmark harness's fairness ledger
+(`dmc-navigator-orion`, `docs/04_FAIRNESS.md` §2 "The oracle budget") is written
+to prevent. That is a property of an experiment, not of the software, so it is
+something you ask for rather than something you are given.
+
+`status` reports the quantities separately so they can never blur again:
 
 | field | meaning |
 |---|---|
-| `submitted` | budget-facing: charged rows only. Gates `can_propose`. |
-| `observations` | every row in the archive, charged or free |
+| `docking_attempts` | molecules **this run** docked and was charged for |
+| `external_charged` | externally-scored molecules opted in with `--charge-to-budget`; `0` by default |
+| `budget_consumed` | `docking_attempts + external_charged` — what gates `can_propose` |
+| `remaining_budget` | `budget.submitted - budget_consumed` |
+| `submitted` | unchanged alias of `budget_consumed`, kept so existing drivers read the same field |
+| `observations` | every row in the archive, charged or not |
 | `external_observations` | archive rows that came from `warm-start` / `enrich` |
 | `external_ingests` | one record per ingestion (batch id, mode, counts, file SHA-256) |
+
+> **Changed in 0.5.1.** The previous default charged external evidence. Rows already
+> written keep the value they were written with, so a run resumed across the change
+> keeps its own accounting and only new ingests follow the new default. `--free` is
+> still accepted as a no-op and prints a note saying the default moved.
 
 On a run with no external evidence all three collapse to today's numbers, so
 nothing an existing driver reads changes.
@@ -195,7 +209,7 @@ dmc-navigator-prod warm-start --run-dir runs/tgfr1 --scores seeds.csv \
 
 # Structures only, not charged to this run's oracle budget.
 dmc-navigator-prod warm-start --run-dir runs/tgfr1 --scores hts_deck.csv \
-    --mode smiles --free
+    --mode smiles
 
 # Pause after round 3, dock on the side, hand the results over, continue.
 dmc-navigator-prod enrich --run-dir runs/tgfr1 --scores side_docking.csv \
@@ -226,7 +240,8 @@ counted for budget without becoming a training label — the same policy the nor
 | `--mode auto\|synthon\|smiles\|external` | see above; default `auto` |
 | `--id-map PATH` | verified `external_id,product_id` crosswalk; mapped rows require matching supplied SMILES |
 | `--score-column NAME` | column holding the measured value (default `score`) |
-| `--free` | do not charge these molecules to `budget.submitted` |
+| `--charge-to-budget` | charge these molecules to `budget.submitted` (off by default) |
+| `--free` | deprecated no-op: not charging is now the default |
 | `--label TEXT` | free-text provenance tag recorded in the manifest |
 | `--allow-unmatched` | demote unresolvable rows to the smiles path instead of failing |
 | `--allow-conflict` | trust the ids when a supplied SMILES disagrees |

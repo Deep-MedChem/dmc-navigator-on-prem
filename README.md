@@ -392,20 +392,28 @@ came from a Navigator-supported database, export the ids.
 
 ### Budget
 
-These molecules are **charged** to the run's `budget.submitted` by default: 1,000
-seeds means 1,000 fewer molecules Navigator will propose. That is the honest
-default — you are not getting free oracle calls. Pass `--free` if you already paid
-for the docking separately and want the full budget still available.
+Since 0.5.1 these molecules are **not charged** to the run's `budget.submitted`.
+The budget bounds the docking *this run* performs, and these were docked
+elsewhere, so importing 1,000 seeds leaves all of Navigator's own proposals
+available. Pass `--charge-to-budget` when you are running a budget-matched
+comparison — a seeded run against a cold one — so the seeds cost what they would
+have cost this run. (Up to 0.5.0 charging was the default; `--free` is still
+accepted and now does nothing.)
 
-`navigator status` reports `submitted` (what counts against the budget) alongside
-`observations` and `external_observations` so the two never blur.
+`navigator status` reports `docking_attempts` (molecules this run docked),
+`external_charged` (imports charged with `--charge-to-budget`), `budget_consumed`
+(the two together, which is what the budget is checked against) and
+`remaining_budget`, alongside `observations` and `external_observations`.
+`submitted` is still reported and means `budget_consumed`. Molecules imported
+before the upgrade keep the charging they were imported with.
 
 ### Useful flags
 
 | Flag | Effect |
 |---|---|
 | `--dry-run` | Validate and report; write nothing. Run this first on a large file. |
-| `--free` | Do not charge these molecules to the run's budget. |
+| `--charge-to-budget` | Charge these molecules to the run's budget (off by default; for budget-matched comparisons). |
+| `--free` | Accepted for compatibility; does nothing since 0.5.1, when not charging became the default. |
 | `--score-column NAME` | Your score column isn't called `score`. |
 | `--label TEXT` | Provenance note recorded with the ingestion. |
 | `--allow-unmatched` | Some ids don't resolve: treat just those as structures-only instead of failing the whole file. |
@@ -587,3 +595,38 @@ rejection sampler, so even large N stays quick.
 
 See [Custom seeds](docs/CUSTOM_SEEDS.md) for upgrading, compatibility checks,
 ID mapping, already-docked scores and synthon-agnostic training examples.
+
+## Optimiser fixes (0.5.1)
+
+0.5.1 corrects how the optimiser spends a campaign's budget and paces its search,
+so what an unconfigured campaign does changes. The [changelog](CHANGELOG.md) lists
+every change; the ones you will notice:
+
+- **Imported molecules no longer count against the budget.** See
+  [Budget](#budget); `--charge-to-budget` restores the old accounting.
+- **Rounds follow the drug-like filter again.** With `enforce_filtered_batch` off,
+  the default, a round delivers the proposed molecules that pass
+  `space.exact_filter_profile` instead of being refilled to a full batch.
+  Duplicates are still replaced.
+- **The budget caps what is docked.** The last round delivers exactly the
+  remainder instead of shrinking into many small rounds.
+- **The search anneals over the budget actually spent**, not over a nominal round
+  count (`advanced.anneal_basis`, default `budget_spent`).
+- **New controls:** an optional stop when a round's filter yield falls below a
+  floor (`min_gate_yield` in the config, or
+  `navigator update-params --run-dir runs/<name> --min-gate-yield 0.05`). It is
+  reported by `navigator status` as `can_propose: false`, so it stops drivers that
+  check that field, as `examples/run_navigator.sh` does. And
+  `navigator update-params --anneal-basis` pins or repairs the clock a run
+  anneals on.
+
+### Upgrading a campaign that is already running
+
+A run created under 0.5.0 is migrated by its first `propose`, `update-params` or
+`transition` under 0.5.1 that goes ahead: it is pinned to the clock it started
+with (`anneal_basis: nominal_rounds`), with a warning and a record in its
+`state.json`. That keeps its annealing schedule, but not necessarily its exact
+proposals, because the other 0.5.1 changes can move later rounds. To finish a
+campaign exactly as it started, keep it on 0.5.0: set `DMC_NAV_IMAGE_TAG=0.5.0` in
+`.env` before running `navigator update`, and return to `stable` for the next
+campaign. New runs get the 0.5.1 defaults.

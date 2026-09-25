@@ -3,6 +3,31 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
+## 0.5.1 — unreleased
+
+Optimiser fixes; what an unconfigured campaign does changes. A campaign already
+running under 0.5.0 can stay on it — see
+[Upgrading a campaign that is already running](README.md#upgrading-a-campaign-that-is-already-running).
+
+- Imported molecules (`warm-start`, `enrich`) are no longer charged to the budget;
+  `--charge-to-budget` charges them and `--free` is a no-op. `status` adds
+  `docking_attempts`, `external_charged`, `budget_consumed` and `remaining_budget`.
+- With `enforce_filtered_batch` off (the default), a round delivers the molecules
+  that pass the drug-like filter instead of being refilled to a full batch;
+  duplicates are still replaced.
+- The budget caps what is docked: the final round delivers exactly the remainder.
+- The anneal schedule follows the budget spent (`advanced.anneal_basis`, default
+  `budget_spent`; `nominal_rounds` is the 0.5.0 behaviour).
+- The one-hop expansion ceiling scales with the candidate pool
+  (`advanced.second_hop_cap_fraction`); unchanged at every preset pool size.
+- New: an optional `min_gate_yield` stop (`update-params --min-gate-yield`),
+  `update-params --anneal-basis`, and validation of `advanced` parameters wherever
+  a config is created, updated or transitioned.
+- Faster proposal rounds with identical results.
+- The image's Python (3.12) and numerical libraries are pinned to exact builds, the
+  ones the release is tested with, so a rebuild of the same version proposes the same
+  molecules. Proposals can differ from the 0.5.0 image's for this reason too.
+
 ## 0.5.0 — 2026-09-15
 
 See [the custom seed guide](docs/CUSTOM_SEEDS.md) for upgrade and usage.

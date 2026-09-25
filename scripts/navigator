@@ -57,9 +57,9 @@ Custom seeds / enrichment (molecules scored outside the propose-ingest loop):
                                         the ranking model; the next propose still
                                         draws its own fresh batch.
                                       --mode auto (default) picks per file.
-                                      These molecules are CHARGED to the run's
-                                      budget by default; pass --free if you do not
-                                      want them to consume it.
+                                      These molecules are NOT charged to the
+                                      run's budget; pass --charge-to-budget for a
+                                      budget-matched comparison.
                                       Always --dry-run a large file first.
 
 Sampling (forwarded to the licensed CLI; requires a valid license):

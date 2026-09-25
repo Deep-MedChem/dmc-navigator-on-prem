@@ -107,9 +107,9 @@ and reassemble to that supplied molecule. `--id-map` cannot be combined with
 navigator validate-seeds --run-dir runs/custom --molecules inputs/seeds.csv \
   --id-map inputs/id_map.csv --report runs/custom/compatibility.csv
 navigator warm-start --run-dir runs/custom --scores inputs/scored_seeds.csv \
-  --mode synthon --id-map inputs/id_map.csv --free --dry-run
+  --mode synthon --id-map inputs/id_map.csv --dry-run
 navigator warm-start --run-dir runs/custom --scores inputs/scored_seeds.csv \
-  --mode synthon --id-map inputs/id_map.csv --free
+  --mode synthon --id-map inputs/id_map.csv
 ```
 
 The ingestion manifest records source and mapping paths, SHA-256 hashes, and the
@@ -125,17 +125,19 @@ reaction____synthon1____synthon2,STRUCTURE,-8.2
 
 ```bash
 navigator warm-start --run-dir runs/custom --scores inputs/scored_seeds.csv \
-  --mode synthon --score-column docking_score --free --dry-run
+  --mode synthon --score-column docking_score --dry-run
 navigator warm-start --run-dir runs/custom --scores inputs/scored_seeds.csv \
-  --mode synthon --score-column docking_score --free
+  --mode synthon --score-column docking_score
 navigator propose --run-dir runs/custom
 ```
 
-There is **no docking during import**, whether `--free` is supplied or not. That
-flag only controls accounting: by default imports consume `budget.submitted`;
-`--free` leaves the configured proposal budget available. Synthon seeds are marked
-seen, so their product IDs are excluded from subsequent proposals. Dock only the
-new proposals in your normal oracle loop.
+There is **no docking during import**, and since 0.5.1 no accounting effect either:
+`budget.submitted` bounds the docking this run performs, and an imported molecule was
+docked elsewhere, so the full proposal budget stays available. Pass
+`--charge-to-budget` to spend the budget on them anyway, which is what a
+budget-matched comparison against a cold run needs. Synthon seeds are marked seen, so
+their product IDs are excluded from subsequent proposals. Dock only the new proposals
+in your normal oracle loop.
 
 Use scores comparable to the campaign's target, scoring protocol, units and
 objective direction. No score scaling or sign conversion is applied on import.
@@ -154,9 +156,9 @@ prior-002,CCOc1ccc(C(N)=O)cc1,-6.8
 
 ```bash
 navigator warm-start --run-dir runs/custom --scores inputs/external_scored.csv \
-  --mode external --free --dry-run
+  --mode external --dry-run
 navigator warm-start --run-dir runs/custom --scores inputs/external_scored.csv \
-  --mode external --free
+  --mode external
 navigator propose --run-dir runs/custom
 ```
 
