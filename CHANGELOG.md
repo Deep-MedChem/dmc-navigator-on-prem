@@ -27,6 +27,8 @@ running under 0.5.0 can stay on it — see
 - The image's Python (3.12) and numerical libraries are pinned to exact builds, the
   ones the release is tested with, so a rebuild of the same version proposes the same
   molecules. Proposals can differ from the 0.5.0 image's for this reason too.
+- The surrogate runs on the CPU: the image's XGBoost is a CPU-only build, as it has been in
+  every release. The GPU notes in this guide said otherwise and now say so.
 
 ## 0.5.0 — 2026-09-15
 

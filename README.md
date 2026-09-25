@@ -304,7 +304,7 @@ PYRD, TGFR1). After installing a database (step 4):
 ```bash
 export SCHRODINGER=/opt/schrodinger2026-1        # your install
 examples/run_navigator.sh TGFR1                  # gamma, 100k budget, 10 rounds, Glide
-examples/run_navigator.sh KIF11 --budget 10k --gpu     # quick run, GPU surrogate
+examples/run_navigator.sh KIF11 --budget 10k --gpu     # quick run (the surrogate still fits on the CPU)
 examples/run_navigator.sh PYRD  --scorer mock --budget 200 --iters 2   # smoke, no Schrödinger
 ```
 
@@ -560,10 +560,11 @@ rejection sampler, so even large N stays quick.
   release (e.g. Enamine REAL v5a ≈ 1.1 GB encrypted). Each release is verified
   (signature + per-file hashes) before anything is written, so a failed or
   interrupted install leaves nothing partially installed — just re-run it.
-- **GPU / `--gpu` seems to run on CPU.** The surrogate only uses CUDA if the
-  container has GPU access. Set `DMC_NAV_GPUS=all` in `.env` (needs an NVIDIA
-  driver + the NVIDIA Container Toolkit on the host; see `docker-compose.gpu.yml`).
-  Without it, `--gpu` / `surrogate.device=cuda` safely falls back to CPU.
+- **GPU / `--gpu` runs on the CPU.** The image's XGBoost is a CPU-only build, as it
+  has been in every release, so the surrogate always fits on the CPU: `--gpu` and
+  `surrogate.device=cuda` are accepted and run there. `DMC_NAV_GPUS` (see
+  `docker-compose.gpu.yml`) gives the container GPU access, but nothing in the current
+  image uses it.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
 - **`error while creating mount source path … mkdir …: permission denied`

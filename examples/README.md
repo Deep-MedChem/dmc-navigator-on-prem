@@ -66,7 +66,7 @@ examples/run_navigator.sh <TARGET> [options]
 | `--database` | `db@release` | `freedom-space-5@2026-03-296b.2` | installed release to screen |
 | `--scorer` | `glide` `mock` | `glide` | real Glide, or the no-Schrödinger stand-in |
 | `--pool` | integer | `20000` | surrogate candidate-pool per round |
-| `--gpu` | flag | off | XGBoost surrogate on CUDA (falls back to CPU if absent) |
+| `--gpu` | flag | off | Ask for the XGBoost surrogate on CUDA; the image's XGBoost is CPU-only, so it fits on the CPU |
 | `--precision` | `HTVS` `SP` `XP` | `HTVS` | Glide precision (overrides docking_settings) |
 | `--status` | flag | — | print status of this target's runs and exit |
 
@@ -74,7 +74,7 @@ examples/run_navigator.sh <TARGET> [options]
 
 ```bash
 examples/run_navigator.sh TGFR1                          # default: gamma, 100k, Glide HTVS
-examples/run_navigator.sh KIF11 --budget 10k --gpu       # quick 10k run, GPU surrogate
+examples/run_navigator.sh KIF11 --budget 10k --gpu       # quick 10k run (the surrogate still fits on the CPU)
 examples/run_navigator.sh PYRD  --method all             # gamma+alpha+beta+analog, separate runs
 examples/run_navigator.sh TGFR1 --scorer mock --budget 200 --iters 2   # smoke, no Schrödinger
 examples/run_navigator.sh KIF11 --database enamine-real-v5a@2026-07-02.1  # a different space

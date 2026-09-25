@@ -25,7 +25,7 @@
 #                 and must write the batch_id,product_id,status,score CSV. Overrides
 #                 --scorer (use for your own docking engine / scheduler).
 #   --pool    N   surrogate candidate-pool size per round (default 20000)
-#   --gpu         run the XGBoost surrogate on CUDA (falls back to CPU if absent)
+#   --gpu         ask for the XGBoost surrogate on CUDA (the image's XGBoost is CPU-only, so it fits on the CPU)
 #   --precision P HTVS (default) | SP | XP   (Glide precision, overrides settings)
 #   --status      print status for the target's runs and exit
 #   -h|--help
