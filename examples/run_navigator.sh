@@ -32,7 +32,7 @@
 #
 # Examples:
 #   examples/run_navigator.sh TGFR1                         # gamma, 100k, Glide
-#   examples/run_navigator.sh KIF11 --budget 10k --gpu      # quick GPU run
+#   examples/run_navigator.sh KIF11 --budget 10k --gpu      # quick run (the surrogate still fits on the CPU)
 #   examples/run_navigator.sh PYRD  --method all            # all 4 default/supported strategies
 #   examples/run_navigator.sh TGFR1 --scorer mock --budget 200 --iters 2  # smoke
 #

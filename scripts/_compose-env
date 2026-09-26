@@ -19,8 +19,9 @@ export COMPOSE_CMD="docker compose -p ${COMPOSE_PROJECT_NAME} --project-director
 
 # Opt-in GPU: if DMC_NAV_GPUS is set in .env (e.g. =all), layer the GPU override
 # so the container gets NVIDIA GPU access. Nothing in the current image uses it:
-# its XGBoost is CPU-only, so surrogate.device=cuda / run_navigator.sh --gpu still
-# fit on the CPU. Requires the NVIDIA Container Toolkit on the host.
+# its XGBoost is CPU-only, so run_navigator.sh --gpu still fits on the CPU, and
+# surrogate.device=cuda needs surrogate.allow_cpu_fallback=true or it stops.
+# Requires the NVIDIA Container Toolkit on the host.
 _gpu="$(grep -E '^DMC_NAV_GPUS=' "${REPO_FOLDER}/.env" 2>/dev/null | tail -1 | cut -d= -f2- || true)"
 GPU_COMPOSE_FILE="${REPO_FOLDER}/docker-compose.gpu.yml"
 if [ -n "${_gpu:-}" ] && [ -f "$GPU_COMPOSE_FILE" ]; then

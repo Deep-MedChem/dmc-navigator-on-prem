@@ -561,10 +561,12 @@ rejection sampler, so even large N stays quick.
   (signature + per-file hashes) before anything is written, so a failed or
   interrupted install leaves nothing partially installed — just re-run it.
 - **GPU / `--gpu` runs on the CPU.** The image's XGBoost is a CPU-only build, as it
-  has been in every release, so the surrogate always fits on the CPU: `--gpu` and
-  `surrogate.device=cuda` are accepted and run there. `DMC_NAV_GPUS` (see
-  `docker-compose.gpu.yml`) gives the container GPU access, but nothing in the current
-  image uses it.
+  has been in every release, so the surrogate always fits on the CPU. `--gpu` allows
+  that fallback and runs there, and the run's telemetry reports `cpu`. A config of your
+  own with `surrogate.device: cuda` stops with an error unless it also sets
+  `surrogate.allow_cpu_fallback: true`; since 0.5.2 Navigator refuses to switch device
+  silently. `DMC_NAV_GPUS` (see `docker-compose.gpu.yml`) gives the container GPU access,
+  but nothing in the current image uses it.
 - **Permissions on `./runs`.** The container runs as your UID/GID (recorded in
   `.env` at install) so generated files are owned by you.
 - **`error while creating mount source path … mkdir …: permission denied`

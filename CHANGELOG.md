@@ -3,6 +3,16 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
+## 0.5.2 — unreleased
+
+Maintenance: what an unconfigured campaign proposes does not change.
+
+- A config asking for `surrogate.device: cuda` now stops with an error unless it also sets
+  `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
+  a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets
+  the fallback and keeps running; telemetry now reports the device actually used, `cpu`.
+- pandas 3.0.6 (was 2.3.3). XGBoost stays at 3.3.0.
+
 ## 0.5.1 — 2026-09-26
 
 Optimiser fixes; what an unconfigured campaign does changes. A campaign already
