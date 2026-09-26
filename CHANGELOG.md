@@ -3,7 +3,7 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
-## 0.5.1 — unreleased
+## 0.5.1 — 2026-09-26
 
 Optimiser fixes; what an unconfigured campaign does changes. A campaign already
 running under 0.5.0 can stay on it — see
