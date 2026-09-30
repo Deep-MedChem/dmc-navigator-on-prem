@@ -5,12 +5,32 @@ Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable`
 
 ## 0.5.2 — unreleased
 
-Maintenance: what an unconfigured campaign proposes does not change.
+What an unconfigured campaign proposes changes for gamma, the default `--method`, from its
+second round, and GA-DCSO v14 can decide differently where a similarity sits exactly on its
+cap.
 
+- The candidate pool is now a hard total that includes the one-hop mutants, so `--pool N`
+  (`candidate_pool_size`) means N candidates in all. Gamma used to add its mutants on top of
+  the pool; on a 100,000 pool its second round ranked about 110,000 candidates in 0.5.1 and
+  exactly 100,000 now, and about three quarters of the molecules it proposes are the same.
+  A config with `advanced.second_hop_cap_fraction` is now refused with a message saying what
+  to use instead, and `advanced.second_hop_cap: 0` now means no cap rather than no second
+  hop (`advanced.second_hop_frac: 0` switches it off). A gamma campaign resumed under 0.5.2
+  continues under the new rule.
+- GA-DCSO v14 proposes faster: its diversity check uses gamma's compact fingerprint
+  comparison, and on a 300,000 pool a check over 24,300 picks took 20 seconds instead of 85.
+  Where a similarity sits exactly on the cap, v14 can now decide differently, so a v14
+  campaign can diverge from 0.5.1 from that point.
+- Every operation on a run is recorded in `<run>/logs/operations.jsonl`: what ran, when,
+  how long each step took and, on failure, the full error. A run killed by the system (for
+  example, out of memory) is recorded as `killed` by the next command. When a command
+  fails, its error line says where the details are; send that file to support. It also
+  records the time GA-DCSO spends in its diversity check.
 - A config asking for `surrogate.device: cuda` now stops with an error unless it also sets
   `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
   a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets
-  the fallback and keeps running; telemetry now reports the device actually used, `cpu`.
+  the fallback and keeps running; telemetry now reports the device actually used, `cpu`,
+  and why CUDA could not be used.
 - pandas 3.0.6 (was 2.3.3). XGBoost stays at 3.3.0.
 
 ## 0.5.1 — 2026-09-26
