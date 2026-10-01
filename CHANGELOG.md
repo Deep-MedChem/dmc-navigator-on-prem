@@ -5,9 +5,8 @@ Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable`
 
 ## 0.5.2 — 2026-10-01
 
-What an unconfigured campaign proposes changes for gamma, the default `--method`, from its
-second round, and GA-DCSO v14 can decide differently where a similarity sits exactly on its
-cap.
+What an unconfigured campaign proposes changes from its second round, for gamma, the
+default `--method`, and for GA-DCSO v14.
 
 - The candidate pool is now a hard total that includes the one-hop mutants, so `--pool N`
   (`candidate_pool_size`) means N candidates in all. Gamma used to add its mutants on top of
@@ -17,6 +16,10 @@ cap.
   to use instead, and `advanced.second_hop_cap: 0` now means no cap rather than no second
   hop (`advanced.second_hop_frac: 0` switches it off). A gamma campaign resumed under 0.5.2
   continues under the new rule.
+- GA-DCSO v14 keeps its diversity check on longer: it now switches off when 90% of the
+  budget is spent instead of 80%, and starts from a slightly looser similarity limit, 0.70
+  instead of 0.65. Its proposals change from its second round, and a v14 campaign resumed
+  under 0.5.2 continues on the new schedule.
 - GA-DCSO v14 proposes faster: its diversity check uses gamma's compact fingerprint
   comparison, and on a 300,000 pool a check over 24,300 picks took 20 seconds instead of 85.
   Where a similarity sits exactly on the cap, v14 can now decide differently, so a v14
