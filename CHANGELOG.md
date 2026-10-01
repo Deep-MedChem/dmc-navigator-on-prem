@@ -3,7 +3,7 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
-## 0.5.2 — unreleased
+## 0.5.2 — 2026-10-01
 
 What an unconfigured campaign proposes changes for gamma, the default `--method`, from its
 second round, and GA-DCSO v14 can decide differently where a similarity sits exactly on its
