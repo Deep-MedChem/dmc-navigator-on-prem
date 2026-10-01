@@ -30,7 +30,9 @@ cap.
   `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
   a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets
   the fallback and keeps running; telemetry now reports the device actually used, `cpu`,
-  and why CUDA could not be used.
+  and why CUDA could not be used. A campaign already running with such a config stops at
+  its next `propose`: set the option in the run's `config.json` to continue, or finish it
+  on 0.5.1 (`DMC_NAV_IMAGE_TAG=0.5.1` in `.env`).
 - pandas 3.0.6 (was 2.3.3). XGBoost stays at 3.3.0.
 
 ## 0.5.1 — 2026-09-26
