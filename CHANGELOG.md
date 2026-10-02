@@ -20,8 +20,9 @@ default `--method`, and for GA-DCSO v14.
   under the new rule and cap.
 - GA-DCSO v14 keeps its diversity check on longer: it now switches off when 90% of the
   budget is spent instead of 80%, and starts from a slightly looser similarity limit, 0.70
-  instead of 0.65. Its proposals change from its second round, and a v14 campaign resumed
-  under 0.5.2 continues on the new schedule.
+  instead of 0.65. It also reserves less of each pool for one-hop mutants: 5% rising to
+  10%, instead of 10% rising to 30%. Its proposals change from its second round, and a v14
+  campaign resumed under 0.5.2 continues on the new schedules.
 - GA-DCSO v14's exploration now reaches the scorer: its exploration molecules are spread
   through each proposal instead of appended last, so filling a round to size with
   `enforce_filtered_batch` no longer cuts them. With that setting on, v14 delivers different
