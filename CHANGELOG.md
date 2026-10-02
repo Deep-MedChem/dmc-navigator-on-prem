@@ -20,6 +20,14 @@ default `--method`, and for GA-DCSO v14.
   budget is spent instead of 80%, and starts from a slightly looser similarity limit, 0.70
   instead of 0.65. Its proposals change from its second round, and a v14 campaign resumed
   under 0.5.2 continues on the new schedule.
+- GA-DCSO v14's exploration now reaches the scorer: its exploration molecules are spread
+  through each proposal instead of appended last, so filling a round to size with
+  `enforce_filtered_batch` no longer cuts them. With that setting on, v14 delivers different
+  molecules; with it off, the default, the same molecules in a different order.
+- GA-DCSO v14 still chooses for novelty when a round asks for many novel molecules: above
+  4,096 novelty picks its previous selector returned a random sample, and the new one
+  selects across the whole unseen pool at about the same cost. `advanced.novelty_selector:
+  "coreset"` keeps the earlier selector.
 - GA-DCSO v14 proposes faster: its diversity check uses gamma's compact fingerprint
   comparison, and on a 300,000 pool a check over 24,300 picks took 20 seconds instead of 85.
   Where a similarity sits exactly on the cap, v14 can now decide differently, so a v14
