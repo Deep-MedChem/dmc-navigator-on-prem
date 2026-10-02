@@ -14,8 +14,10 @@ default `--method`, and for GA-DCSO v14.
   exactly 100,000 now, and about three quarters of the molecules it proposes are the same.
   A config with `advanced.second_hop_cap_fraction` is now refused with a message saying what
   to use instead, and `advanced.second_hop_cap: 0` now means no cap rather than no second
-  hop (`advanced.second_hop_frac: 0` switches it off). A gamma campaign resumed under 0.5.2
-  continues under the new rule.
+  hop (`advanced.second_hop_frac: 0` switches it off). Gamma now caps its one-hop mutants
+  at 20,000, which matters only on a pool above 66,666; `advanced.second_hop_cap: 0` removes
+  the cap, and other methods have none. A gamma campaign resumed under 0.5.2 continues
+  under the new rule and cap.
 - GA-DCSO v14 keeps its diversity check on longer: it now switches off when 90% of the
   budget is spent instead of 80%, and starts from a slightly looser similarity limit, 0.70
   instead of 0.65. Its proposals change from its second round, and a v14 campaign resumed
