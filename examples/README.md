@@ -60,22 +60,27 @@ examples/run_navigator.sh <TARGET> [options]
 | Option | Values | Default | Meaning |
 |---|---|---|---|
 | `<TARGET>` | `KIF11` `PYRD` `TGFR1` | — | which `examples/configs/<TARGET>.json` |
-| `--method` | `gamma` `alpha` `beta` `analog` `all` | `gamma` | strategy (or all four) |
+| `--method` | `gamma` `ga` `accurate` `fast` `all` | `gamma` | strategy (or all four); full preset names also accepted |
 | `--budget` | `10k` `100k` `1m` or an integer | `100k` | total molecules docked |
 | `--iters` | integer | `10` | propose/dock/ingest rounds (batch = budget ÷ iters) |
 | `--database` | `db@release` | `freedom-space-5@2026-03-296b.2` | installed release to screen |
 | `--scorer` | `glide` `mock` | `glide` | real Glide, or the no-Schrödinger stand-in |
-| `--pool` | integer | `20000` | surrogate candidate-pool per round |
+| `--pool` | integer | `20000` | total candidate-pool limit per round, including second-hop mutants; raised to at least the batch size by this script |
 | `--gpu` | flag | off | Ask for the XGBoost surrogate on CUDA; the image's XGBoost is CPU-only, so it fits on the CPU |
 | `--precision` | `HTVS` `SP` `XP` | `HTVS` | Glide precision (overrides docking_settings) |
 | `--status` | flag | — | print status of this target's runs and exit |
+
+The runner sets `candidate_pool_size = max(--pool, batch_size)`. For example,
+`--budget 1m --iters 10 --pool 20000` produces a 100,000-candidate limit.
+To configure a pool smaller than the batch, use your own config with `navigator init`.
+In 0.5.2 the engine honors that configured limit, which can leave a short batch.
 
 ### Examples
 
 ```bash
 examples/run_navigator.sh TGFR1                          # default: gamma, 100k, Glide HTVS
 examples/run_navigator.sh KIF11 --budget 10k --gpu       # quick 10k run (the surrogate still fits on the CPU)
-examples/run_navigator.sh PYRD  --method all             # gamma+alpha+beta+analog, separate runs
+examples/run_navigator.sh PYRD  --method all             # gamma+ga+accurate+fast, separate runs
 examples/run_navigator.sh TGFR1 --scorer mock --budget 200 --iters 2   # smoke, no Schrödinger
 examples/run_navigator.sh KIF11 --database enamine-real-v5a@2026-07-02.1  # a different space
 ```
@@ -85,13 +90,18 @@ examples/run_navigator.sh KIF11 --database enamine-real-v5a@2026-07-02.1  # a di
 Each round: the container **proposes** a batch (surrogate-guided, diversity-aware),
 you **dock** it with Glide on the host, the container **ingests** the scores and
 refits — for `--iters` rounds. State lives in `runs/<target>_<method>_<budget>_<scorer>/`.
+New runs use `gamma`, `ga`, `accurate` or `fast` as the method component. Existing
+`..._analog_...` runs are reused only for the harvester recorded in their config;
+they are never renamed. If a new method-specific run already exists, it takes precedence.
 
 - **Resumable.** Re-run the *exact same command* to continue after a Ctrl-C,
   reboot, or spot reclaim — nothing already docked is re-docked, and a batch that
-  was proposed but not yet scored is recovered automatically.
+  was proposed but not yet scored is recovered automatically. A saved strategy
+  that differs from the requested one is rejected before any campaign work.
 - **Compiled logs.** Progress prints one clean line per phase and is appended to
   `runs/<run>/pipeline.log`; the optimizer prints single-line errors by design.
-  Set `DMC_NAV_DEBUG=1` in `.env` only when you need full tracebacks.
+  In 0.5.2, `runs/<run>/logs/operations.jsonl` adds command timings and available
+  error tracebacks. Set `DMC_NAV_DEBUG=1` in `.env` to also print tracebacks.
 - **Property filter (0.3.0).** Two layers, both configured here. The config's
   `space.property_constraints` is the additive, generation-time drug-like
   prefilter — approximate by design, it only biases what gets built. The

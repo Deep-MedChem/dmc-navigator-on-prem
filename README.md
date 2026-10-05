@@ -468,6 +468,9 @@ navigator propose    --run-dir runs/hk
 The analog-harvest presets report how concentrated their hits are on every
 proposal and warn if a campaign narrows to one or two chemotype families.
 
+For 0.5.2's behavior changes and upgrade guidance, see the
+[changelog](CHANGELOG.md#052--unreleased).
+
 > **Migration (0.3.0).** `alpha_diversity_screening` (the previous default) was
 > retired; use `gamma_diversity_screening`. `beta_diversity_screening` was
 > retired; use `ga_dcso_v14_screening`. A config naming a retired preset stops
@@ -549,6 +552,9 @@ rejection sampler, so even large N stays quick.
 
 - **Clean errors by design.** Errors print a single line. For full tracebacks
   while diagnosing, set `DMC_NAV_DEBUG=1` in `.env`.
+- **Failed or slow run commands (0.5.2).** Check `runs/<run>/logs/operations.jsonl`
+  for timings, state changes and available error tracebacks. Dry runs write no records;
+  a process killed outright leaves no completed record. Include this file when asking for support.
 - **License is hardware-bound.** If you move to a different machine/VM, re-run
   `navigator machine-id` there and request a new license — the old one will
   report a hardware-fingerprint mismatch.
@@ -592,7 +598,10 @@ rejection sampler, so even large N stays quick.
   x86_64 Linux host for production rather than relying on emulation.
 - **Updating the image.** Run `navigator update`. It fetches the configured tag
   in `.env` (`DMC_NAV_IMAGE_TAG`) and reports whether the local image changed.
-  Existing runs, inputs, and the installed license remain in place.
+  Existing runs, inputs, and the installed license remain in place. This updates
+  only the image. To update the wrapper and examples, update this repository to
+  the matching installer release and rerun `./install_navigator.sh`; it preserves
+  your existing `.env` and license.
 
 ## Custom seed molecules (0.5.0)
 
@@ -623,13 +632,30 @@ every change; the ones you will notice:
   `navigator update-params --anneal-basis` pins or repairs the clock a run
   anneals on.
 
-### Upgrading a campaign that is already running
+## Upgrading a campaign that is already running
+
+0.5.2 changes pool allocation and selection, including for default Gamma and V14
+runs. Gamma's fixed 20,000 second-hop cap restores its 0.5.0 default, but the
+combined pool and budget-spent clock still differ from 0.5.0. See the
+[changelog](CHANGELOG.md#052--unreleased) for details. Before upgrading:
+
+- Remove `advanced.second_hop_cap_fraction`. Use `advanced.second_hop_fraction` /
+  `second_hop_fraction_late` for the share and `advanced.second_hop_cap` for the
+  absolute limit (`0` disables the hop; `null` removes that limit).
+- For a CUDA config, select `surrogate.device: cpu` or set
+  `surrogate.allow_cpu_fallback: true`. The example runner already enables fallback.
 
 A run created under 0.5.0 is migrated by its first `propose`, `update-params` or
-`transition` under 0.5.1 that goes ahead: it is pinned to the clock it started
+`transition` under 0.5.1 or later that passes its checks: it is pinned to the clock it started
 with (`anneal_basis: nominal_rounds`), with a warning and a record in its
-`state.json`. That keeps its annealing schedule, but not necessarily its exact
-proposals, because the other 0.5.1 changes can move later rounds. To finish a
-campaign exactly as it started, keep it on 0.5.0: set `DMC_NAV_IMAGE_TAG=0.5.0` in
-`.env` before running `navigator update`, and return to `stable` for the next
-campaign. New runs get the 0.5.1 defaults.
+`state.json`. A refused operation leaves the run's configuration and state unchanged,
+but can append an operations-log record. This preserves the clock;
+other changes in later versions can still alter proposals.
+
+To continue with a campaign's original runtime, set `DMC_NAV_IMAGE_TAG` in `.env`
+to its version (for example, `0.5.1` or `0.5.0`) before running `navigator update`.
+Published releases also provide `sha-<first-12-characters-of-source-commit>` tags
+for a specific build. Use the tag recorded for the release; the short Docker image
+ID printed by `navigator update` is a different identifier. Return to `stable`
+when ready to use the latest release for a new campaign. Selecting an older novelty
+or diversity backend alone does not reproduce the complete older algorithm.

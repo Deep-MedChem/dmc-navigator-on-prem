@@ -1,7 +1,7 @@
-# GPU override — opt-in. Gives the licensed container access to NVIDIA GPUs so
-# the XGBoost surrogate runs on CUDA (examples/run_navigator.sh --gpu, or
-# surrogate.device=cuda in a run config). WITHOUT this override the container
-# has no GPU access and the surrogate silently uses the CPU fallback.
+# GPU override — opt-in. Gives the licensed container access to NVIDIA GPUs.
+# The current image's XGBoost is CPU-only, so this does not enable CUDA training.
+# A config requesting surrogate.device=cuda needs surrogate.allow_cpu_fallback=true
+# or the request fails. examples/run_navigator.sh --gpu enables that fallback.
 #
 # Requirements on the host: an NVIDIA driver + the NVIDIA Container Toolkit
 # (so `docker run --gpus all` works). Verify with:

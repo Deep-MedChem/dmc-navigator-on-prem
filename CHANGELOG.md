@@ -3,51 +3,85 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
-## 0.5.2 — 2026-10-01
+## 0.5.2 — Unreleased
 
-What an unconfigured campaign proposes changes from its second round, for gamma, the
-default `--method`, and for GA-DCSO v14.
+Upgrading can change future proposals, including for default Gamma and GA-DCSO v14
+campaigns. See [upgrade guidance](README.md#upgrading-a-campaign-that-is-already-running)
+before updating an existing run.
 
-- The candidate pool is now a hard total that includes the one-hop mutants, so `--pool N`
-  (`candidate_pool_size`) means N candidates in all. Gamma used to add its mutants on top of
-  the pool; on a 100,000 pool its second round ranked about 110,000 candidates in 0.5.1 and
-  exactly 100,000 now, and about three quarters of the molecules it proposes are the same.
-  A config with `advanced.second_hop_cap_fraction` is now refused with a message saying what
-  to use instead, and `advanced.second_hop_cap: 0` now means no cap rather than no second
-  hop (`advanced.second_hop_frac: 0` switches it off). Gamma now caps its one-hop mutants
-  at 20,000, which matters only on a pool above 66,666; `advanced.second_hop_cap: 0` removes
-  the cap, and other methods have none. A gamma campaign resumed under 0.5.2 continues
-  under the new rule and cap.
-- GA-DCSO v14 keeps its diversity check on longer: it now switches off when 90% of the
-  budget is spent instead of 80%, and starts from a slightly looser similarity limit, 0.70
-  instead of 0.65. It also reserves less of each pool for one-hop mutants: 5% rising to
-  10%, instead of 10% rising to 30%. Its proposals change from its second round, and a v14
-  campaign resumed under 0.5.2 continues on the new schedules.
-- GA-DCSO v14's exploration now reaches the scorer: its exploration molecules are spread
-  through each proposal instead of appended last, so filling a round to size with
-  `enforce_filtered_batch` no longer cuts them. With that setting on, v14 delivers different
-  molecules; with it off, the default, the same molecules in a different order.
-- GA-DCSO v14 still chooses for novelty when a round asks for many novel molecules: above
-  4,096 novelty picks its previous selector returned a random sample, and the new one
-  selects across the whole unseen pool at about the same cost. `advanced.novelty_selector:
-  "coreset"` keeps the earlier selector.
-- GA-DCSO v14 proposes faster: its diversity check uses gamma's compact fingerprint
-  comparison, and on a 300,000 pool a check over 24,300 picks took 20 seconds instead of 85.
-  Where a similarity sits exactly on the cap, v14 can now decide differently, so a v14
-  campaign can diverge from 0.5.1 from that point.
-- Every operation on a run is recorded in `<run>/logs/operations.jsonl`: what ran, when,
-  how long each step took and, on failure, the full error. A run killed by the system (for
-  example, out of memory) is recorded as `killed` by the next command. When a command
-  fails, its error line says where the details are; send that file to support. It also
-  records the time GA-DCSO spends in its diversity check.
+### Pool and selection
+
+- `candidate_pool_size` is now a hard total including one-hop mutants. Gamma previously
+  added mutants on top of the pool; it now shares that limit between base candidates and
+  mutants, backfilling unused mutant slots within the total. Sampling can leave a short pool.
+- **Gamma restores the fixed 20,000-mutant ceiling from 0.5.0.** In 0.5.1 the effective
+  ceiling could grow with the pool. `advanced.second_hop_cap: 0` continues to disable the
+  hop; `null` removes the absolute cap. V14 remains uncapped by default, as in 0.5.0 and
+  0.5.1. The removed `advanced.second_hop_cap_fraction` is rejected with migration guidance.
+  Restoring Gamma's cap does not restore its 0.5.0 proposals: the combined pool budget is
+  new, and the budget-spent annealing clock introduced in 0.5.1 remains.
+- V14 retains the 0.5.0/0.5.1 schedule values: a 10% → 30% one-hop share and a similarity
+  cap starting at 0.65 and reaching 1.0 at 80% progress. A configured diversity floor can
+  keep comparisons active afterward. The share now uses Gamma's linear interpolation,
+  which can shift a rounded mutant count by one; the annealing clock remains budget-spent.
+- V14 spreads novelty and random picks through each proposal, so trimming no longer
+  systematically discards exploration at the tail. Ordering changes even without trimming;
+  filtering and trimming can also change which molecules are delivered.
+- V14 defaults to `advanced.novelty_selector: partitioned`, selecting within multiple
+  random windows instead of exhausting one 4,096-candidate window. Windows share a sampled
+  reference but do not enforce diversity against one another. `coreset` keeps the earlier selector.
+- `selection.reaction_cap` applies across the complete batch, including exploration,
+  unfitted rounds, both harvesters and refill. Only accepted molecules use the allowance;
+  exhausted reactions can leave a short batch. The default remains no cap.
+
+### Advanced system setting: diversity performance
+
+`advanced.diversity_guard_backend` is for performance tuning on a measured workload.
+Normally leave it unset: Gamma and V14 both default to `packed_incremental`.
+It chooses the comparison implementation; `selection.diversity` controls the
+diversity pressure. `null` is invalid.
+
+| Value | Method | Fallback when unsupported |
+|---|---|---|
+| `list_bulk` | Bulk comparisons against a list; packed bytes or RDKit, depending on the store | None |
+| `packed_incremental` | Exact packed comparisons, one candidate at a time | `list_bulk` |
+| `dense_float32` | Historical dense float32 comparisons | None |
+| `packed_batched` | Block screening with exact packed verification | Incremental, then list/bulk |
+
+Batching is opt-in and requires a supported 2048-bit packed store. To benchmark it:
+
+```json
+{"advanced": {"diversity_guard_backend": "packed_batched"}}
+```
+
+Performance depends on the workload. Packed methods make the same decisions on identical
+fingerprints. V14 previously used dense float32 arithmetic; the new default can change
+decisions at similarity boundaries. `dense_float32` retains that arithmetic, but does not
+undo the other selection changes.
+
+### Diagnostics and runtime
+
+- Run-changing commands append a completed-operation record to `<run>/logs/operations.jsonl`:
+  settings, timing, state before and after, and any error with its available traceback.
+  Dry runs write no records; a process killed outright leaves no completed record.
+  The file is diagnostic only and is not used to resume or select candidates. Logging
+  failures do not change the command's outcome. It also reports the actual diversity
+  backend after fallback and GA-DCSO's `select` time; iteration telemetry reports pool,
+  selection-channel and reaction-cap counts.
 - A config asking for `surrogate.device: cuda` now stops with an error unless it also sets
   `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
   a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets
   the fallback and keeps running; telemetry now reports the device actually used, `cpu`,
-  and why CUDA could not be used. A campaign already running with such a config stops at
-  its next `propose`: set the option in the run's `config.json` to continue, or finish it
-  on 0.5.1 (`DMC_NAV_IMAGE_TAG=0.5.1` in `.env`).
+  and why CUDA could not be used. For an existing CUDA config, set the device to `cpu`
+  or enable fallback in the run's `config.json` before its next `propose`.
 - pandas 3.0.6 (was 2.3.3). XGBoost stays at 3.3.0.
+
+### Installer examples
+
+- Accurate and Fast harvest now use separate directories for new example runs.
+  Previously `--method all` could silently resume Accurate's run for Fast. Matching
+  legacy `..._analog_...` runs are still resumed in place; a requested strategy that
+  differs from the saved config is rejected before resuming.
 
 ## 0.5.1 — 2026-09-26
 

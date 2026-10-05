@@ -118,7 +118,7 @@ map_method() {
     gamma)           echo gamma_diversity_screening ;;
     ga|v14)          echo ga_dcso_v14_screening ;;
     accurate|analog) echo analog_harvest_accurate ;;
-    fast)            echo analog_harvest_fast ;;
+    fast|analog_harvest) echo analog_harvest_fast ;;
     # 'alpha' and 'beta' were retired in 0.3.0 (-> gamma / ga_dcso_v14); a full
     # retired preset name falls through and stops with a migration message.
     *)               echo "$1" ;;   # already a full preset name
@@ -155,6 +155,49 @@ nav() { "$NAV" "$@"; }
 
 # status field, tolerant of the intentional non-zero exit on false/empty fields.
 field() { nav status --run-dir "$1" --field "$2" 2>/dev/null || true; }
+
+# Resolve the run before writing logs or recovering a pending batch. The old
+# "analog" directory could contain either harvester; its saved strategy decides.
+campaign_run_dir() {
+  "$PYTHON_BIN" - "$TARGET" "$1" "$BLABEL" "$SCORER" <<'PY'
+import json, sys
+from pathlib import Path
+
+target, strategy, budget, scorer = sys.argv[1:]
+legacy_method = strategy.split("_", 1)[0]
+method = {"analog_harvest_accurate": "accurate",
+          "analog_harvest_fast": "fast"}.get(strategy, legacy_method)
+
+def run_path(method):
+    return Path("runs") / f"{target.lower()}_{method}_{budget}_{scorer}"
+
+def saved_strategy(run):
+    config = run / "config.json"
+    try:
+        with config.open() as handle:
+            saved = json.load(handle)["strategy"]
+        if not isinstance(saved, str):
+            raise ValueError("strategy must be a string")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        sys.exit(f"error: cannot read strategy from {config}: {exc}")
+    return "analog_harvest_fast" if saved == "analog_harvest" else saved
+
+run = run_path(method)
+legacy = run_path(legacy_method)
+if run != legacy and not (run / "config.json").exists() and (legacy / "config.json").exists():
+    if saved_strategy(legacy) == strategy:
+        run = legacy
+
+if (run / "config.json").exists():
+    saved = saved_strategy(run)
+    if saved != strategy:
+        sys.exit(f"error: {run} uses {saved}, but {strategy} was requested; "
+                 "use navigator commands to resume that run, or a separate directory "
+                 "for a new campaign")
+
+print(run.as_posix())
+PY
+}
 
 # Render the effective run config from the base template + runtime overrides,
 # using only the standard library. Writes to $1.
@@ -211,8 +254,8 @@ dock_batch() {
 # One target+method campaign.
 run_campaign() {
   local strategy="$1"
-  local mshort="${strategy%%_*}"                          # gamma/alpha/beta/analog
-  local run="runs/$(echo "$TARGET" | tr A-Z a-z)_${mshort}_${BLABEL}_${SCORER}"
+  local run
+  run="$(campaign_run_dir "$strategy")" || return 1
   mkdir -p "$REPO/$run"
   LOG="$REPO/$run/pipeline.log"
 
