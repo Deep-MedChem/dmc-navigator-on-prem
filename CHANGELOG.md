@@ -61,13 +61,14 @@ undo the other selection changes.
 
 ### Diagnostics and runtime
 
-- Run-changing commands append a completed-operation record to `<run>/logs/operations.jsonl`:
-  settings, timing, state before and after, and any error with its available traceback.
-  Dry runs write no records; a process killed outright leaves no completed record.
-  The file is diagnostic only and is not used to resume or select candidates. Logging
-  failures do not change the command's outcome. It also reports the actual diversity
-  backend after fallback and GA-DCSO's `select` time; iteration telemetry reports pool,
-  selection-channel and reaction-cap counts.
+- Run-changing commands and phases append start/finish events to
+  `<run>/logs/operations.jsonl`, with hierarchical phase names and total/own times.
+  Operation finishes include settings, state snapshots and available error details.
+  A hard kill leaves unfinished starts; dry runs emit no events. Logging failures
+  do not change the command's outcome. Use one writer per run, with logging in its
+  starting thread/process. The log is diagnostic only; iteration telemetry retains
+  scientific counts and quality metrics. Timings now separate training preparation,
+  GA seeding/generation, second-hop generation, selection and exploration.
 - A config asking for `surrogate.device: cuda` now stops with an error unless it also sets
   `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
   a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets
