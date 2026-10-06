@@ -663,10 +663,10 @@ DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc
 DMC_NAV_IMAGE_TAG=0.5.2
 ```
 
-The registry path changed in 0.5.0. A 0.3.0 installation uses
-`on-prem/dmc-navigator`; that repository has no `0.5.2` image. Changing only the
-version tag therefore fails with `manifest unknown`. The two settings above
-also apply when upgrading directly from 0.3.0.
+The image repository path changed in 0.5.0; the registry hostname stayed the same.
+A 0.3.0 installation uses `on-prem/dmc-navigator`; that repository has no `0.5.2`
+image. Changing only the version tag therefore fails with `manifest unknown`.
+The two settings above also apply when upgrading directly from 0.3.0.
 
 Using the AWS profile configured for your installation, run:
 
@@ -683,8 +683,8 @@ Existing licenses, database installations and run mounts are retained.
 ## Upgrading a campaign that is already running
 
 The [installer and image upgrade procedure](#upgrading-to-052) includes the
-registry change required by older installations. The following guidance covers
-changes to campaign behavior.
+repository path change required by installations still using `on-prem/dmc-navigator`.
+The following guidance covers changes to campaign behavior.
 
 0.5.2 changes pool allocation and selection, including for default Gamma and V14
 runs. Gamma's fixed 20,000 second-hop cap restores its 0.5.0 default, but the
