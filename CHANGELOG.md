@@ -109,6 +109,9 @@ uses the first 12 characters of the production source commit; the registry diges
 and the Docker image ID printed by `navigator update` are separate identifiers.
 Set `DMC_NAV_IMAGE_TAG=0.5.2` or `sha-3dc0bdfe6d2f` in `.env` to pin this image.
 `stable` pointed to the same digest at publication and will advance with future releases.
+Older installations, including 0.3.0, must also change `DMC_NAV_IMAGE` to the image
+repository above; changing only the version tag leaves the obsolete registry path.
+See the [complete upgrade procedure](README.md#upgrading-to-052).
 
 Refresh this installer checkout and rerun `./install_navigator.sh` to update the
 wrapper and examples while preserving the existing `.env` and license.

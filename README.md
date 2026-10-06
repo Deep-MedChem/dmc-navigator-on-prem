@@ -611,7 +611,8 @@ rejection sampler, so even large N stays quick.
   Existing runs, inputs, and the installed license remain in place. This updates
   only the image. To update the wrapper and examples, update this repository to
   the matching installer release and rerun `./install_navigator.sh`; it preserves
-  your existing `.env` and license.
+  your existing `.env` and license. Follow [Upgrading to 0.5.2](#upgrading-to-052)
+  for the image settings required by older installations.
 
 ## Custom seed molecules (0.5.0)
 
@@ -642,7 +643,48 @@ every change; the ones you will notice:
   `navigator update-params --anneal-basis` pins or repairs the clock a run
   anneals on.
 
+## Upgrading to 0.5.2
+
+For an active campaign, read the [compatibility guidance](#upgrading-a-campaign-that-is-already-running)
+before updating. From a clean installer checkout, select the released installer
+and refresh the installed wrapper:
+
+```bash
+git fetch origin --tags
+git switch --detach v0.5.2
+bash install_navigator.sh
+```
+
+The installer preserves an existing `.env`. Edit **both** image settings in that
+file, keeping your other settings and paths:
+
+```dotenv
+DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
+DMC_NAV_IMAGE_TAG=0.5.2
+```
+
+The registry path changed in 0.5.0. A 0.3.0 installation uses
+`on-prem/dmc-navigator`; that repository has no `0.5.2` image. Changing only the
+version tag therefore fails with `manifest unknown`. The two settings above
+also apply when upgrading directly from 0.3.0.
+
+Using the AWS profile configured for your installation, run:
+
+```bash
+navigator login
+navigator update
+navigator --version
+navigator self-test
+```
+
+Expect version `0.5.2`. Use `stable` instead of `0.5.2` to follow future releases.
+Existing licenses, database installations and run mounts are retained.
+
 ## Upgrading a campaign that is already running
+
+The [installer and image upgrade procedure](#upgrading-to-052) includes the
+registry change required by older installations. The following guidance covers
+changes to campaign behavior.
 
 0.5.2 changes pool allocation and selection, including for default Gamma and V14
 runs. Gamma's fixed 20,000 second-hop cap restores its 0.5.0 default, but the
@@ -671,6 +713,8 @@ other changes in later versions can still alter proposals.
 
 To continue with a campaign's original runtime, set `DMC_NAV_IMAGE_TAG` in `.env`
 to its version (for example, `0.5.1` or `0.5.0`) before running `navigator update`.
+For `0.3.0`, also retain its original repository:
+`DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/dmc-navigator`.
 Published releases also provide `sha-<first-12-characters-of-source-commit>` tags
 for a specific build. See [0.5.2's published image identifiers](CHANGELOG.md#published-image).
 Use the tag recorded for the release; the short Docker image
