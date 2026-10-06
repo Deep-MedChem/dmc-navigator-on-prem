@@ -20,10 +20,13 @@ before updating an existing run.
   0.5.1. The removed `advanced.second_hop_cap_fraction` is rejected with migration guidance.
   Restoring Gamma's cap does not restore its 0.5.0 proposals: the combined pool budget is
   new, and the budget-spent annealing clock introduced in 0.5.1 remains.
-- V14 retains the 0.5.0/0.5.1 schedule values: a 10% → 30% one-hop share and a similarity
-  cap starting at 0.65 and reaching 1.0 at 80% progress. A configured diversity floor can
-  keep comparisons active afterward. The share now uses Gamma's linear interpolation,
-  which can shift a rounded mutant count by one; the annealing clock remains budget-spent.
+- V14's default one-hop share changes from 10% → 30% to **0% → 20%**, using Gamma's
+  linear interpolation on the budget-spent clock. Each unspecified endpoint adopts its
+  new default; explicit overrides remain effective. Set `advanced.second_hop_fraction: 0.1` and
+  `advanced.second_hop_fraction_late: 0.3` to retain the previous endpoints. With
+  `anneal: false`, the default zero early fraction disables the hop. The similarity cap
+  still starts at 0.65 and reaches 1.0 at 80% progress; a configured diversity floor can
+  keep comparisons active afterward.
 - V14 spreads novelty and random picks through each proposal, so trimming no longer
   systematically discards exploration at the tail. Ordering changes even without trimming;
   filtering and trimming can also change which molecules are delivered.
@@ -37,7 +40,7 @@ before updating an existing run.
 ### Advanced system setting: diversity performance
 
 `advanced.diversity_guard_backend` is for performance tuning on a measured workload.
-Normally leave it unset: Gamma and V14 both default to `packed_incremental`.
+Normally leave it unset: Gamma defaults to `packed_incremental`, V14 to `packed_batched`.
 It chooses the comparison implementation; `selection.diversity` controls the
 diversity pressure. `null` is invalid.
 
@@ -48,7 +51,7 @@ diversity pressure. `null` is invalid.
 | `dense_float32` | Historical dense float32 comparisons | None |
 | `packed_batched` | Block screening with exact packed verification | Incremental, then list/bulk |
 
-Batching is opt-in and requires a supported 2048-bit packed store. To benchmark it:
+Batching requires a supported 2048-bit packed store. Gamma can opt in with:
 
 ```json
 {"advanced": {"diversity_guard_backend": "packed_batched"}}
@@ -61,14 +64,20 @@ undo the other selection changes.
 
 ### Diagnostics and runtime
 
-- Run-changing commands and phases append start/finish events to
-  `<run>/logs/operations.jsonl`, with hierarchical phase names and total/own times.
-  Operation finishes include settings, state snapshots and available error details.
-  A hard kill leaves unfinished starts; dry runs emit no events. Logging failures
-  do not change the command's outcome. Use one writer per run, with logging in its
-  starting thread/process. The log is diagnostic only; iteration telemetry retains
-  scientific counts and quality metrics. Timings now separate training preparation,
-  GA seeding/generation, second-hop generation, selection and exploration.
+- Run-changing commands append start/finish entries for commands and nested stages to
+  `<run>/logs/operations.jsonl`, with full paths such as `propose.strategy.fit`.
+  Finish entries report total elapsed time and **own time** (excluding child stages).
+  Entries include command settings, state changes and available error tracebacks,
+  and are written immediately. A hard kill leaves unfinished starts; dry runs emit
+  nothing. Logging failures do not change the command's outcome. Use one writer per run.
+  The log is diagnostic; iteration telemetry retains scientific counts and quality
+  metrics. Timings separate training preparation, GA seeding/generation, second-hop
+  generation, selection and exploration.
+- The shared similarity/novelty pool now defaults to the logical CPU count instead of
+  at most eight workers. Set `DMC_NAV_SIM_THREADS` in `.env` to choose its worker count
+  (`1` disables threading); Compose now forwards this setting to the container.
+  This affects performance, not selection results, and does not limit other Navigator
+  threads. See [worker settings](README.md#notes--troubleshooting).
 - A config asking for `surrogate.device: cuda` now stops with an error unless it also sets
   `surrogate.allow_cpu_fallback: true`. The image's XGBoost is CPU-only, and until now such
   a config ran on the CPU while reporting `cuda`. `examples/run_navigator.sh --gpu` sets

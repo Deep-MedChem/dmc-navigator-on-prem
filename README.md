@@ -554,7 +554,17 @@ rejection sampler, so even large N stays quick.
   while diagnosing, set `DMC_NAV_DEBUG=1` in `.env`.
 - **Failed or slow run commands (0.5.2).** Check `runs/<run>/logs/operations.jsonl`
   for timings, state changes and available error tracebacks. Dry runs write no records;
-  a process killed outright leaves no completed record. Include this file when asking for support.
+  a process killed outright leaves no root finish. Inspect completed children and
+  unmatched starts for the last recorded progress; these alone do not establish
+  whether the process is still running. Include this file when asking for support.
+- **Similarity workers (0.5.2).** Set `DMC_NAV_SIM_THREADS` in `.env` (for example,
+  `DMC_NAV_SIM_THREADS=8`) to choose the shared worker count for packed diversity
+  comparisons and novelty selection. Empty or unset uses the logical CPU count
+  reported inside the container; `1` disables this pool's threading. Fewer workers
+  may be faster on a shared or memory-bound host. This setting preserves selection
+  results and does not limit other threads, such as surrogate training. Existing
+  installations can add the setting to their preserved `.env` after updating this
+  installer repository.
 - **License is hardware-bound.** If you move to a different machine/VM, re-run
   `navigator machine-id` there and request a new license — the old one will
   report a hardware-fingerprint mismatch.
@@ -642,6 +652,13 @@ combined pool and budget-spent clock still differ from 0.5.0. See the
 - Remove `advanced.second_hop_cap_fraction`. Use `advanced.second_hop_fraction` /
   `second_hop_fraction_late` for the share and `advanced.second_hop_cap` for the
   absolute limit (`0` disables the hop; `null` removes that limit).
+- V14's default second-hop share is now **0% → 20%**. Each unspecified endpoint
+  adopts its new default on the next proposal; explicit overrides remain effective.
+  To retain the previous endpoints, set `advanced.second_hop_fraction: 0.1` and
+  `advanced.second_hop_fraction_late: 0.3` in the run's `config.json`. With
+  `anneal: false`, the default zero early fraction disables the hop. V14 also
+  defaults to `advanced.diversity_guard_backend: packed_batched`; an explicit
+  backend override remains effective.
 - For a CUDA config, select `surrogate.device: cpu` or set
   `surrogate.allow_cpu_fallback: true`. The example runner already enables fallback.
 

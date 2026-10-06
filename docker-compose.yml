@@ -31,6 +31,8 @@ services:
     environment:
       # Set to 1 to see full Python tracebacks while debugging.
       DMC_NAV_DEBUG: "${DMC_NAV_DEBUG:-}"
+      # Allow shared-host tuning; empty keeps the image's default worker count.
+      DMC_NAV_SIM_THREADS: "${DMC_NAV_SIM_THREADS:-}"
       # Persist installed databases on the mounted volume above (the image's
       # /var/lib default is not writable as your UID).
       DMC_NAV_DATA_ROOT: "/opt/dmc-navigator-prod/databases"
