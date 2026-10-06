@@ -3,7 +3,7 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
-## 0.5.2 — Unreleased
+## 0.5.2 — 2026-10-06
 
 Upgrading can change future proposals, including for default Gamma and GA-DCSO v14
 campaigns. See [upgrade guidance](README.md#upgrading-a-campaign-that-is-already-running)
@@ -92,6 +92,29 @@ undo the other selection changes.
   Previously `--method all` could silently resume Accurate's run for Fast. Matching
   legacy `..._analog_...` runs are still resumed in place; a requested strategy that
   differs from the saved config is rejected before resuming.
+
+### Published image
+
+| Identifier | Value |
+|---|---|
+| Installer Git tag (this repository) | `v0.5.2` |
+| Production Git tag (`dmc-navigator-prod`) | `on-prem-v0.5.2` |
+| Production source commit | `3dc0bdfe6d2f1bf6acf188ff3d54ee46a062615b` |
+| Image repository | `815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator` |
+| Immutable image tags | `0.5.2`, `sha-3dc0bdfe6d2f` |
+| Registry digest | `sha256:7d8d0c1c774f29c417e28062db68932b64fe284d95a58d6bd21ec3873ac4a94f` |
+
+The installer tag identifies this repository's own commit. The `sha-` image tag
+uses the first 12 characters of the production source commit; the registry digest
+and the Docker image ID printed by `navigator update` are separate identifiers.
+Set `DMC_NAV_IMAGE_TAG=0.5.2` or `sha-3dc0bdfe6d2f` in `.env` to pin this image.
+`stable` pointed to the same digest at publication and will advance with future releases.
+
+Refresh this installer checkout and rerun `./install_navigator.sh` to update the
+wrapper and examples while preserving the existing `.env` and license.
+`navigator update` updates only the image. See the
+[campaign upgrade guidance](README.md#upgrading-a-campaign-that-is-already-running)
+before switching an existing run to 0.5.2.
 
 ## 0.5.1 — 2026-09-26
 

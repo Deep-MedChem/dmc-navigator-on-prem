@@ -469,7 +469,7 @@ The analog-harvest presets report how concentrated their hits are on every
 proposal and warn if a campaign narrows to one or two chemotype families.
 
 For 0.5.2's behavior changes and upgrade guidance, see the
-[changelog](CHANGELOG.md#052--unreleased).
+[changelog](CHANGELOG.md#052--2026-10-06).
 
 > **Migration (0.3.0).** `alpha_diversity_screening` (the previous default) was
 > retired; use `gamma_diversity_screening`. `beta_diversity_screening` was
@@ -647,7 +647,7 @@ every change; the ones you will notice:
 0.5.2 changes pool allocation and selection, including for default Gamma and V14
 runs. Gamma's fixed 20,000 second-hop cap restores its 0.5.0 default, but the
 combined pool and budget-spent clock still differ from 0.5.0. See the
-[changelog](CHANGELOG.md#052--unreleased) for details. Before upgrading:
+[changelog](CHANGELOG.md#052--2026-10-06) for details. Before upgrading:
 
 - Remove `advanced.second_hop_cap_fraction`. Use `advanced.second_hop_fraction` /
   `second_hop_fraction_late` for the share and `advanced.second_hop_cap` for the
@@ -672,7 +672,8 @@ other changes in later versions can still alter proposals.
 To continue with a campaign's original runtime, set `DMC_NAV_IMAGE_TAG` in `.env`
 to its version (for example, `0.5.1` or `0.5.0`) before running `navigator update`.
 Published releases also provide `sha-<first-12-characters-of-source-commit>` tags
-for a specific build. Use the tag recorded for the release; the short Docker image
+for a specific build. See [0.5.2's published image identifiers](CHANGELOG.md#published-image).
+Use the tag recorded for the release; the short Docker image
 ID printed by `navigator update` is a different identifier. Return to `stable`
 when ready to use the latest release for a new campaign. Selecting an older novelty
 or diversity backend alone does not reproduce the complete older algorithm.
