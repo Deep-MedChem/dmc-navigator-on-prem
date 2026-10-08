@@ -3,6 +3,31 @@
 Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
 `navigator update` to pick up a new release). Newest first.
 
+## 0.5.4 — 2026-10-08
+
+Fixes `navigator data install` on 0.5.0–0.5.2, which rejected every published
+database release with
+`incompatible bundle: synthon_assembler 0.3.0 != bundle 0.2.0`. 0.5.4 is 0.5.2 with
+only this fix: proposals, configs, run state and dependencies are unchanged.
+Databases installed with an earlier image were never affected. From 0.5.2, set
+`DMC_NAV_IMAGE_TAG=0.5.4` (or keep `stable`) and run `navigator update`. From 0.5.1 or
+earlier, read the 0.5.2 changes below first.
+
+### Published image
+
+| Identifier | Value |
+|---|---|
+| Installer Git tag (this repository) | `v0.5.4` |
+| Production Git tag (`dmc-navigator-prod`) | `on-prem-v0.5.4` |
+| Production source commit | `aa7221174920275009fa1e8b79bd6c7607f1653c` |
+| Image repository | `815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator` |
+| Immutable image tags | `0.5.4`, `sha-aa7221174920` |
+| Registry digest | `sha256:d1429da1c6f8045c2bc68a8ec676e440e5ba24fcd8b604e3364c84ac37e8460d` |
+
+Set `DMC_NAV_IMAGE_TAG=0.5.4` or `sha-aa7221174920` in `.env` to pin this image.
+`stable` pointed to the same digest at publication. See the
+[upgrade procedure](README.md#upgrading-to-054).
+
 ## 0.5.2 — 2026-10-06
 
 Upgrading can change future proposals, including for default Gamma and GA-DCSO v14

@@ -552,6 +552,10 @@ rejection sampler, so even large N stays quick.
 
 - **Clean errors by design.** Errors print a single line. For full tracebacks
   while diagnosing, set `DMC_NAV_DEBUG=1` in `.env`.
+- **`incompatible bundle: synthon_assembler 0.3.0 != bundle 0.2.0`.** Images 0.5.0
+  to 0.5.2 cannot install any published database release. Update to 0.5.4 (see
+  [Upgrading to 0.5.4](#upgrading-to-054)) and rerun `navigator data install`.
+  Databases already installed with an earlier image are unaffected.
 - **Failed or slow run commands (0.5.2).** Check `runs/<run>/logs/operations.jsonl`
   for timings, state changes and available error tracebacks. Dry runs write no records;
   a process killed outright leaves no root finish. Inspect completed children and
@@ -611,7 +615,7 @@ rejection sampler, so even large N stays quick.
   Existing runs, inputs, and the installed license remain in place. This updates
   only the image. To update the wrapper and examples, update this repository to
   the matching installer release and rerun `./install_navigator.sh`; it preserves
-  your existing `.env` and license. Follow [Upgrading to 0.5.2](#upgrading-to-052)
+  your existing `.env` and license. Follow [Upgrading to 0.5.4](#upgrading-to-054)
   for the image settings required by older installations.
 
 ## Custom seed molecules (0.5.0)
@@ -643,7 +647,13 @@ every change; the ones you will notice:
   `navigator update-params --anneal-basis` pins or repairs the clock a run
   anneals on.
 
-## Upgrading to 0.5.2
+## Upgrading to 0.5.4
+
+<a id="upgrading-to-052"></a>
+
+0.5.4 is 0.5.2 with one fix: `navigator data install` accepts the published
+database releases, which 0.5.0 to 0.5.2 reject. Proposals are the same as under 0.5.2.
+From 0.5.2, change only `DMC_NAV_IMAGE_TAG` and run `navigator update`.
 
 For an active campaign, read the [compatibility guidance](#upgrading-a-campaign-that-is-already-running)
 before updating. From a clean installer checkout, select the released installer
@@ -651,7 +661,7 @@ and refresh the installed wrapper:
 
 ```bash
 git fetch origin --tags
-git switch --detach v0.5.2
+git switch --detach v0.5.4
 bash install_navigator.sh
 ```
 
@@ -660,11 +670,11 @@ file, keeping your other settings and paths:
 
 ```dotenv
 DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
-DMC_NAV_IMAGE_TAG=0.5.2
+DMC_NAV_IMAGE_TAG=0.5.4
 ```
 
 The image repository path changed in 0.5.0; the registry hostname stayed the same.
-A 0.3.0 installation uses `on-prem/dmc-navigator`; that repository has no `0.5.2`
+A 0.3.0 installation uses `on-prem/dmc-navigator`; that repository has no `0.5.4`
 image. Changing only the version tag therefore fails with `manifest unknown`.
 The two settings above also apply when upgrading directly from 0.3.0.
 
@@ -677,12 +687,12 @@ navigator --version
 navigator self-test
 ```
 
-Expect version `0.5.2`. Use `stable` instead of `0.5.2` to follow future releases.
+Expect version `0.5.4`. Use `stable` instead of `0.5.4` to follow future releases.
 Existing licenses, database installations and run mounts are retained.
 
 ## Upgrading a campaign that is already running
 
-The [installer and image upgrade procedure](#upgrading-to-052) includes the
+The [installer and image upgrade procedure](#upgrading-to-054) includes the
 repository path change required by installations still using `on-prem/dmc-navigator`.
 The following guidance covers changes to campaign behavior.
 
