@@ -1,7 +1,48 @@
 # Changelog — DMC Navigator on-prem
 
-Image releases published to `on-prem/navigator/dmc-navigator` (pull the `stable` tag; run
-`navigator update` to pick up a new release). Newest first.
+Image release history and upcoming changes for `on-prem/navigator/dmc-navigator`.
+Pull the `stable` tag and run `navigator update` to pick up a published release.
+Newest first; unreleased entries are not available from `stable` yet.
+
+## 0.5.5 — unreleased
+
+**Strategy and surrogate defaults are unchanged from 0.5.2/0.5.4.** The existing
+launcher forwards the new commands; no launcher code changes are required.
+
+- `navigator propose --json` and `navigator ingest --json` return one JSON object
+  on stdout, with other output on stderr. `navigator results --run-dir <run>` lists
+  observations; `--top N` selects the best valid scores and `--json` makes output compact.
+- Run state stores proposal and in-run scores paths relative to the run directory,
+  allowing it to be moved between commands. Byte-identical re-ingestion remains a
+  no-op after a move, using the saved scores digest.
+- `space.exact_property_constraints` applies exact assembled-product windows,
+  intersecting the existing filter profile. Seed imports report these checks;
+  dropping failures still requires `--drop-gate-failures`.
+- Opt into `synthon-or-xgb-tail-weighted-v1` to favor better training labels.
+  `surrogate.xgb_tail_fraction=0.1` and `surrogate.xgb_tail_min_weight_share=0.5`
+  are its defaults. The existing `synthon-or-xgb-v1` remains unweighted and default.
+- Iteration telemetry gains actual batch prediction quality after ingestion:
+  Spearman, RMSE, mean error and label spread. It reuses ranking-time predictions
+  without extra inference or changes to selection. The existing holdout diagnostic
+  is labeled a small-sample probe.
+- `init` rejects a config without a space, config validation rejects non-finite
+  hit thresholds, and missing proposal files produce clearer ingestion errors.
+
+**Compatibility:** before downgrading from 0.5.5, ingest any pending batch; earlier
+versions cannot resolve its new relative state paths. Configs created or rewritten
+by 0.5.5 also contain new fields that older images reject, even at default values;
+finishing the batch alone is not enough. Keep these runs on 0.5.5 or restore a
+pre-upgrade snapshot. Database selectors remain portable, but explicit space/cache
+paths must still exist at the same container paths after moving a run. Serialize
+commands against each run directory.
+
+Dependencies and the database compatibility mapping are unchanged from 0.5.4.
+Source and compiled-image release validation passed on 2026-10-09, including
+all four shipped strategies' golden traces and 70 compiled feature tests.
+Publication is pending.
+See [usage](README.md#055-workflow-additions-unreleased) and the
+[upgrade plan](README.md#upgrading-to-055-after-publication). Final image identifiers
+will be recorded here after release.
 
 ## 0.5.4 — 2026-10-08
 

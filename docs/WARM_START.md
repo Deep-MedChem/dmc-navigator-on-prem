@@ -189,9 +189,10 @@ nothing an existing driver reads changes.
 ## Filter gate
 
 When the run sets `space.exact_filter_profile`, incoming molecules are evaluated
-against it and the pass fraction is reported in the summary and the ingest
-manifest — but **nothing is dropped**. Discarding evidence you already paid for is
-the wrong default. Pass `--drop-gate-failures` to enforce it, which is the right
+against it. From 0.5.5, `space.exact_property_constraints` also applies, intersecting
+the profile when both are configured. The pass fraction is reported in the summary
+and the ingest manifest — but **nothing is dropped**. Discarding evidence you
+already paid for is the wrong default. Pass `--drop-gate-failures` to enforce it, which is the right
 call when you need the elite set to contain only molecules Navigator itself would
 have been permitted to propose.
 
@@ -245,7 +246,7 @@ counted for budget without becoming a training label — the same policy the nor
 | `--label TEXT` | free-text provenance tag recorded in the manifest |
 | `--allow-unmatched` | demote unresolvable rows to the smiles path instead of failing |
 | `--allow-conflict` | trust the ids when a supplied SMILES disagrees |
-| `--drop-gate-failures` | drop molecules failing `space.exact_filter_profile` |
+| `--drop-gate-failures` | drop molecules failing the exact profile; from 0.5.5, also the exact property windows |
 | `--dry-run` | validate and report; write nothing |
 | `--force` | re-ingest a file already ingested into this run |
 

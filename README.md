@@ -11,6 +11,9 @@ Production updates arrive through the `stable` image channel. Deep-MedChem moves
 that tag only after a reviewed on-prem release passes tests and image smoke checks;
 you choose when to install it by running `navigator update`.
 
+**Current published release: 0.5.4.** The upcoming 0.5.5 changes below are marked
+unreleased; see the [changelog](CHANGELOG.md#055--unreleased).
+
 - **Offline:** after the image is pulled the workflow runs with no network
   access. The one exception is `navigator data` (downloading an encrypted
   database from Deep-MedChem's public bucket); the databases are also
@@ -351,6 +354,63 @@ shows how to copy and adapt that example.
 Append `--help` to any workflow command for its options
 (`navigator status --help`).
 
+## 0.5.5 workflow additions (unreleased)
+
+These commands and settings require the forthcoming 0.5.5 image. The existing
+installer forwards them without launcher changes. Strategy and surrogate defaults
+are unchanged from 0.5.2/0.5.4.
+
+### Automated callers
+
+```bash
+navigator propose --run-dir runs/hk --json
+# Score the proposed batch externally, then ingest the resulting scores file:
+navigator ingest --run-dir runs/hk --scores runs/hk/scores/iteration_0000_scores.csv --json
+navigator results --run-dir runs/hk --top 10 --json
+```
+
+`propose` and `ingest` return one JSON object on stdout; diagnostics go to stderr.
+On failure they return a nonzero status and leave stdout empty. Returned
+`proposal_file` and `history_file` paths are relative to the run directory.
+`results` returns a JSON list of observations, or the best valid scores with
+`--top N`; smiles-only external training evidence is not included. Existing output
+without the new flags is unchanged. Serialize commands per run: there is no run lock.
+
+Run directories can be copied or moved between commands, including while a batch
+awaits scores. Keep the same database release available. Explicit space/cache
+paths in `config.json` must still exist at the same paths inside the container;
+moving the run does not rewrite them. Byte-identical re-ingestion is recognized
+by its saved scores digest.
+
+### Optional model and property settings
+
+In the config supplied at `init`, set `surrogate.preset` to
+`synthon-or-xgb-tail-weighted-v1` to favor better training labels. Its defaults
+`surrogate.xgb_tail_fraction: 0.1` and `surrogate.xgb_tail_min_weight_share: 0.5`
+calibrate exponential weights toward at least half the training weight on the
+best tenth of labels, when attainable. The existing `synthon-or-xgb-v1` remains
+the default. Weighting is a model choice, not a guarantee of better discoveries.
+
+For exact assembled-product limits, add this field to the existing `space`
+section of the config; retain the database and other settings:
+
+```json
+{"exact_property_constraints": {"MolWt": {"max": 350}, "TPSA": {"max": 100}}}
+```
+
+These windows intersect `exact_filter_profile`, require no additive descriptor
+assets, and can use `enforce_filtered_batch` to refill rejected proposals when
+candidates remain. The existing `property_constraints` field keeps its approximate
+generation-time role. Imported seed evidence is checked too, but is dropped only
+with `--drop-gate-failures`; see the [seed filter contract](docs/WARM_START.md#filter-gate).
+
+After ingestion, `logs/iteration_NNNN_telemetry.json` gains
+`surrogate.batch_prediction_quality` when saved predictions and eligible returned
+scores are available. It reports Spearman, RMSE, mean error and label spread,
+using predictions saved under `checkpoints/` without extra inference. This evaluates
+the selected batch, not an independent test set; the existing holdout measurement
+is labeled `small_sample_probe`.
+
 ## Warm start & enrichment (`navigator warm-start` / `navigator enrich`)
 
 If you already have scored molecules — an old campaign against the same target, an
@@ -539,6 +599,8 @@ rejection sampler, so even large N stays quick.
 | `navigator data verify <db@rel>` | Re-verify an installed release offline (signature + hashes) |
 | `navigator data remove <db@rel>` | Delete an installed release from `./databases` |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
+| `navigator propose / ingest ... --json` | Machine-readable workflow result (0.5.5, unreleased) |
+| `navigator results --run-dir <run> [--top N] [--json]` | List observations or the best valid scores (0.5.5, unreleased) |
 | `navigator warm-start --run-dir <run> --scores <csv>` | Seed a fresh run with molecules you scored elsewhere, before its first `propose` |
 | `navigator enrich --run-dir <run> --scores <csv>` | Add externally scored molecules to a run already under way (between rounds) |
 | `navigator random <N> --mode pw\|rw --output <csv> --database <db>` | Random-sample N molecules from a space to an `id,smiles` CSV (pw = product-weighted, rw = reaction-weighted); optional `--filter-profile druglike-v1`, `--seed` |
@@ -647,6 +709,32 @@ every change; the ones you will notice:
   `navigator update-params --anneal-basis` pins or repairs the clock a run
   anneals on.
 
+## Upgrading to 0.5.5 (after publication)
+
+0.5.5 is not published yet. After publication, set these values in `.env`, keeping
+your other settings and paths:
+
+```dotenv
+DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
+DMC_NAV_IMAGE_TAG=0.5.5
+```
+
+Then run `navigator login`, `navigator update`, `navigator --version` and
+`navigator self-test`; expect version `0.5.5`. An installation following `stable`
+can instead retain that tag and update after the release. The final source SHA
+tag and registry digest will be recorded in the [changelog](CHANGELOG.md#055--unreleased).
+The existing launcher already forwards the new commands.
+
+From 0.5.2/0.5.4, strategy and surrogate defaults remain unchanged. From older
+versions, first read the [campaign compatibility guidance](#upgrading-a-campaign-that-is-already-running).
+Before downgrading from 0.5.5, ingest any pending batch: earlier images cannot
+resolve its new relative state paths. That alone is not enough for configs created
+or rewritten by 0.5.5: older images reject `space.exact_property_constraints`,
+`surrogate.xgb_tail_fraction` and `surrogate.xgb_tail_min_weight_share`, even at
+their default values, and do not support the tail-weighted preset. Keep such runs
+on 0.5.5 or restore a pre-upgrade run snapshot to roll back. Existing licenses,
+database installations and run mounts are retained by the upgrade.
+
 ## Upgrading to 0.5.4
 
 <a id="upgrading-to-052"></a>
@@ -726,7 +814,7 @@ to its version (for example, `0.5.1` or `0.5.0`) before running `navigator updat
 For `0.3.0`, also retain its original repository:
 `DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/dmc-navigator`.
 Published releases also provide `sha-<first-12-characters-of-source-commit>` tags
-for a specific build. See [0.5.2's published image identifiers](CHANGELOG.md#published-image).
+for a specific build. See [0.5.2's published image identifiers](CHANGELOG.md#052--2026-10-06).
 Use the tag recorded for the release; the short Docker image
 ID printed by `navigator update` is a different identifier. Return to `stable`
 when ready to use the latest release for a new campaign. Selecting an older novelty
