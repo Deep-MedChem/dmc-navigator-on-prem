@@ -319,19 +319,19 @@ and budget (`--budget 10k|100k|1m`). See [`examples/README.md`](examples/README.
 reaction/synthon inputs under `./inputs`, then:
 
 ```bash
-navigator init  --run-dir runs/hk --config-json inputs/HK.json --overwrite
-proposals="$(navigator propose --run-dir runs/hk)"
-# stdout: runs/hk/proposals/iteration_0000_proposals.parquet
+navigator init  --run-dir runs/tgfr1 --config-json inputs/TGFR1.json --overwrite
+proposals="$(navigator propose --run-dir runs/tgfr1)"
+# stdout: runs/tgfr1/proposals/iteration_0000_proposals.parquet
 # also writes:
-#   runs/hk/proposals/iteration_0000_proposals.csv
-#   runs/hk/scores/iteration_0000_scores_template.csv
+#   runs/tgfr1/proposals/iteration_0000_proposals.csv
+#   runs/tgfr1/scores/iteration_0000_scores_template.csv
 
 # Copy the template, set each row's status and score externally, then ingest it.
-cp runs/hk/scores/iteration_0000_scores_template.csv \
-   runs/hk/scores/iteration_0000_scores.csv
-navigator ingest  --run-dir runs/hk --scores runs/hk/scores/iteration_0000_scores.csv
-navigator propose --run-dir runs/hk           # next batch
-navigator status  --run-dir runs/hk
+cp runs/tgfr1/scores/iteration_0000_scores_template.csv \
+   runs/tgfr1/scores/iteration_0000_scores.csv
+navigator ingest  --run-dir runs/tgfr1 --scores runs/tgfr1/scores/iteration_0000_scores.csv
+navigator propose --run-dir runs/tgfr1           # next batch
+navigator status  --run-dir runs/tgfr1
 ```
 
 To screen an installed database instead of your own inputs, point `init` at it
@@ -347,7 +347,7 @@ Paths are relative to the container's working directory: `runs/…` maps to
 `./runs`, `inputs/…` to `./inputs`, and installed databases live in `./databases`.
 
 The image's self-contained example target is named
-`examples/configs/HK.json` (not `examples/targets/HK.json`). Target configs use
+`examples/configs/TGFR1.json` (not `examples/targets/TGFR1.json`). Target configs use
 `space.reactions_path` and `space.synthons_path`; the install smoke-test notebook
 shows how to copy and adapt that example.
 
@@ -363,10 +363,10 @@ are unchanged from 0.5.2/0.5.4.
 ### Automated callers
 
 ```bash
-navigator propose --run-dir runs/hk --json
+navigator propose --run-dir runs/tgfr1 --json
 # Score the proposed batch externally, then ingest the resulting scores file:
-navigator ingest --run-dir runs/hk --scores runs/hk/scores/iteration_0000_scores.csv --json
-navigator results --run-dir runs/hk --top 10 --json
+navigator ingest --run-dir runs/tgfr1 --scores runs/tgfr1/scores/iteration_0000_scores.csv --json
+navigator results --run-dir runs/tgfr1 --top 10 --json
 ```
 
 `propose` and `ingest` return one JSON object on stdout; diagnostics go to stderr.
@@ -420,12 +420,12 @@ Navigator instead of letting it start cold or ignore them.
 ```bash
 # Seed a fresh run before its first propose. Dry-run a big file first: this
 # validates and reports, and writes nothing.
-navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv --dry-run
-navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv
+navigator warm-start --run-dir runs/tgfr1 --scores inputs/seeds.csv --dry-run
+navigator warm-start --run-dir runs/tgfr1 --scores inputs/seeds.csv
 
 # Pause after round 3, dock some molecules your own way, hand them over, continue.
-navigator enrich  --run-dir runs/hk --scores inputs/side_docking.csv
-navigator propose --run-dir runs/hk
+navigator enrich  --run-dir runs/tgfr1 --scores inputs/side_docking.csv
+navigator propose --run-dir runs/tgfr1
 ```
 
 Put the file under `./inputs` (or `./runs`) — those are the directories the
@@ -490,7 +490,7 @@ while the molecules never enter the space. So Navigator warns you when it happen
 naming the cause and what it cost:
 
 ```
-$ navigator warm-start --run-dir runs/hk --scores inputs/seeds.csv --dry-run
+$ navigator warm-start --run-dir runs/tgfr1 --scores inputs/seeds.csv --dry-run
 warning: the 'id' column does not hold Navigator product ids, so all 5000 row(s)
 took the smiles-only path — they train the ranking surrogate, but they are NOT
 placed in the combinatorial space: they never become elites, cannot be
@@ -521,8 +521,8 @@ Recommended: run `gamma_diversity_screening` first; once you have measured hits,
 switch to analog harvesting over the same archive and budget:
 
 ```bash
-navigator transition --run-dir runs/hk --to analog_harvest_accurate
-navigator propose    --run-dir runs/hk
+navigator transition --run-dir runs/tgfr1 --to analog_harvest_accurate
+navigator propose    --run-dir runs/tgfr1
 ```
 
 The analog-harvest presets report how concentrated their hits are on every
