@@ -4,7 +4,7 @@ Image release history and upcoming changes for `on-prem/navigator/dmc-navigator`
 Pull the `stable` tag and run `navigator update` to pick up a published release.
 Newest first; unreleased entries are not available from `stable` yet.
 
-## 0.5.5 — unreleased
+## 0.5.5 — 2026-10-09
 
 **Strategy and surrogate defaults are unchanged from 0.5.2/0.5.4.** The existing
 launcher forwards the new commands; no launcher code changes are required.
@@ -37,12 +37,19 @@ paths must still exist at the same container paths after moving a run. Serialize
 commands against each run directory.
 
 Dependencies and the database compatibility mapping are unchanged from 0.5.4.
-Source and compiled-image release validation passed on 2026-10-09, including
-all four shipped strategies' golden traces and 70 compiled feature tests.
-Publication is pending.
-See [usage](README.md#055-workflow-additions-unreleased) and the
-[upgrade plan](README.md#upgrading-to-055-after-publication). Final image identifiers
-will be recorded here after release.
+See [usage](README.md#055-workflow-options) and the
+[upgrade instructions](README.md#upgrading-to-055).
+
+### Published image
+
+| Identifier | Value |
+|---|---|
+| Image repository | `815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator` |
+| Immutable image tags | `0.5.5`, `sha-24868c7b20b6` |
+| Registry digest | `sha256:bf8da4c40b8274deff85ddc73157db1a506e03cf6ace97fb0f9746f5a8939873` |
+
+Set `DMC_NAV_IMAGE_TAG=0.5.5` or `sha-24868c7b20b6` in `.env` to pin this image.
+`stable` pointed to the same digest at publication.
 
 ## 0.5.4 — 2026-10-08
 

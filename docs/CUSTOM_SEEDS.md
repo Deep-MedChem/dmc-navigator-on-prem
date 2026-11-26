@@ -179,32 +179,9 @@ select external mode for those structures or correct their identities.
 contains illustrative synthetic scores for testing the input format. Copy it into
 `inputs/` and use a separate fresh run.
 
-### Upgrade from 0.4.0
+### Upgrade an older installation
 
-From your on-prem checkout, refresh the repository and installed wrapper scripts:
-
-```bash
-git pull --ff-only
-bash install_navigator.sh
-```
-
-The installer preserves an existing `.env` and license. In `.env`, set:
-
-```dotenv
-DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
-DMC_NAV_IMAGE_TAG=0.5.0
-```
-
-The registry path changed to match the Navigator-specific customer pull grant.
-Keep your existing license, database installation and run mounts. Then run:
-
-```bash
-navigator login
-navigator update
-navigator --version
-navigator self-test
-```
-
-Expect version `0.5.0`. Use `stable` instead of `0.5.0` to follow future releases.
-The [release](https://github.com/Deep-MedChem/dmc-navigator-on-prem/releases/tag/v0.5.0)
-also records the immutable image digest.
+Follow the [current upgrade instructions](../README.md#upgrading-to-055), including
+the [campaign compatibility guidance](../README.md#upgrading-a-campaign-that-is-already-running)
+before changing an existing run's image. The installer preserves `.env`, your
+license, installed databases and run directories.

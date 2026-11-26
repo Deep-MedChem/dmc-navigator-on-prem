@@ -34,6 +34,10 @@ Workflow (forwarded to the licensed CLI; require a valid license):
   navigator update-params  --run-dir runs/<name> [--budget N ...]
   navigator transition     --run-dir runs/<name> --to analog_harvest_accurate
   navigator status         --run-dir runs/<name>
+  navigator propose / ingest ... --json
+                                      Return a machine-readable result (0.5.5+)
+  navigator results --run-dir runs/<name> [--top N] [--json]
+                                      List observations or the best valid scores (0.5.5+)
   navigator <cmd> --help              Show options for any workflow command
 
 Custom seeds / enrichment (molecules scored outside the propose-ingest loop):

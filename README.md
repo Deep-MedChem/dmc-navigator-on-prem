@@ -11,8 +11,8 @@ Production updates arrive through the `stable` image channel. Deep-MedChem moves
 that tag only after a reviewed on-prem release passes tests and image smoke checks;
 you choose when to install it by running `navigator update`.
 
-**Current published release: 0.5.4.** The upcoming 0.5.5 changes below are marked
-unreleased; see the [changelog](CHANGELOG.md#055--unreleased).
+**Current published release: 0.5.5.** See the
+[upgrade instructions](#upgrading-to-055) and [image identifiers](CHANGELOG.md#055--2026-10-09).
 
 - **Offline:** after the image is pulled the workflow runs with no network
   access. The one exception is `navigator data` (downloading an encrypted
@@ -339,24 +339,24 @@ with `--database` (and a target):
 
 ```bash
 navigator init --run-dir runs/freedom --database freedom-space-5@2026-03-296b.2 \
-  --target inputs/my_target.json --overwrite
+  --target MY_TARGET --overwrite
 navigator propose --run-dir runs/freedom
 ```
 
 Paths are relative to the container's working directory: `runs/…` maps to
 `./runs`, `inputs/…` to `./inputs`, and installed databases live in `./databases`.
 
-The image's self-contained example target is named
-`examples/configs/TGFR1.json` (not `examples/targets/TGFR1.json`). Target configs use
-`space.reactions_path` and `space.synthons_path`; the install smoke-test notebook
-shows how to copy and adapt that example.
+`--target` is a target label; use `--config-json` to load a configuration file.
+The image's self-contained examples are `examples/configs/{KIF11,PYRD,TGFR1}.json`.
+This repository's corresponding configs use the installed Freedom Space database;
+copy one into `./inputs` to adapt it to your run.
 
 Append `--help` to any workflow command for its options
 (`navigator status --help`).
 
-## 0.5.5 workflow additions (unreleased)
+## 0.5.5 workflow options
 
-These commands and settings require the forthcoming 0.5.5 image. The existing
+These commands and settings require Navigator 0.5.5 or later. The existing
 installer forwards them without launcher changes. Strategy and surrogate defaults
 are unchanged from 0.5.2/0.5.4.
 
@@ -599,8 +599,8 @@ rejection sampler, so even large N stays quick.
 | `navigator data verify <db@rel>` | Re-verify an installed release offline (signature + hashes) |
 | `navigator data remove <db@rel>` | Delete an installed release from `./databases` |
 | `navigator init / propose / ingest / update-params / status` | Workflow (forwarded to the licensed CLI) |
-| `navigator propose / ingest ... --json` | Machine-readable workflow result (0.5.5, unreleased) |
-| `navigator results --run-dir <run> [--top N] [--json]` | List observations or the best valid scores (0.5.5, unreleased) |
+| `navigator propose / ingest ... --json` | Machine-readable workflow result (0.5.5+) |
+| `navigator results --run-dir <run> [--top N] [--json]` | List observations or the best valid scores (0.5.5+) |
 | `navigator warm-start --run-dir <run> --scores <csv>` | Seed a fresh run with molecules you scored elsewhere, before its first `propose` |
 | `navigator enrich --run-dir <run> --scores <csv>` | Add externally scored molecules to a run already under way (between rounds) |
 | `navigator random <N> --mode pw\|rw --output <csv> --database <db>` | Random-sample N molecules from a space to an `id,smiles` CSV (pw = product-weighted, rw = reaction-weighted); optional `--filter-profile druglike-v1`, `--seed` |
@@ -615,8 +615,8 @@ rejection sampler, so even large N stays quick.
 - **Clean errors by design.** Errors print a single line. For full tracebacks
   while diagnosing, set `DMC_NAV_DEBUG=1` in `.env`.
 - **`incompatible bundle: synthon_assembler 0.3.0 != bundle 0.2.0`.** Images 0.5.0
-  to 0.5.2 cannot install any published database release. Update to 0.5.4 (see
-  [Upgrading to 0.5.4](#upgrading-to-054)) and rerun `navigator data install`.
+  to 0.5.2 cannot install any published database release. Follow
+  [Upgrading to 0.5.5](#upgrading-to-055) and rerun `navigator data install`.
   Databases already installed with an earlier image are unaffected.
 - **Failed or slow run commands (0.5.2).** Check `runs/<run>/logs/operations.jsonl`
   for timings, state changes and available error tracebacks. Dry runs write no records;
@@ -677,7 +677,7 @@ rejection sampler, so even large N stays quick.
   Existing runs, inputs, and the installed license remain in place. This updates
   only the image. To update the wrapper and examples, update this repository to
   the matching installer release and rerun `./install_navigator.sh`; it preserves
-  your existing `.env` and license. Follow [Upgrading to 0.5.4](#upgrading-to-054)
+  your existing `.env` and license. Follow [Upgrading to 0.5.5](#upgrading-to-055)
   for the image settings required by older installations.
 
 ## Custom seed molecules (0.5.0)
@@ -709,10 +709,9 @@ every change; the ones you will notice:
   `navigator update-params --anneal-basis` pins or repairs the clock a run
   anneals on.
 
-## Upgrading to 0.5.5 (after publication)
+## Upgrading to 0.5.5
 
-0.5.5 is not published yet. After publication, set these values in `.env`, keeping
-your other settings and paths:
+Set both image fields in `.env`, keeping your other settings and paths:
 
 ```dotenv
 DMC_NAV_IMAGE=815935788477.dkr.ecr.us-east-1.amazonaws.com/on-prem/navigator/dmc-navigator
@@ -721,9 +720,14 @@ DMC_NAV_IMAGE_TAG=0.5.5
 
 Then run `navigator login`, `navigator update`, `navigator --version` and
 `navigator self-test`; expect version `0.5.5`. An installation following `stable`
-can instead retain that tag and update after the release. The final source SHA
-tag and registry digest will be recorded in the [changelog](CHANGELOG.md#055--unreleased).
-The existing launcher already forwards the new commands.
+can retain that tag. The immutable SHA tag and registry digest are in the
+[changelog](CHANGELOG.md#055--2026-10-09).
+
+The existing launcher forwards these commands. To refresh an older wrapper and
+its examples, update this checkout and rerun `bash install_navigator.sh`; it
+preserves `.env` and the license. Installations still using
+`on-prem/dmc-navigator` must also change `DMC_NAV_IMAGE` as shown above; changing
+only the version tag will not find the image.
 
 From 0.5.2/0.5.4, strategy and surrogate defaults remain unchanged. From older
 versions, first read the [campaign compatibility guidance](#upgrading-a-campaign-that-is-already-running).
@@ -780,7 +784,7 @@ Existing licenses, database installations and run mounts are retained.
 
 ## Upgrading a campaign that is already running
 
-The [installer and image upgrade procedure](#upgrading-to-054) includes the
+The [installer and image upgrade procedure](#upgrading-to-055) includes the
 repository path change required by installations still using `on-prem/dmc-navigator`.
 The following guidance covers changes to campaign behavior.
 
